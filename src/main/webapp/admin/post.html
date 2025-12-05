@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="light">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Bài viết • Admin</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- DataTables v2 + Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
+    <!-- App CSS -->
+    <link href="admin.css" rel="stylesheet">
+</head>
+<body>
+<script>
+    // (tuỳ chọn) chặn truy cập nếu chưa "đăng nhập"
+    (function(){try{
+        if(localStorage.getItem("isAdmin")!=="true"){
+            const u=new URL("../login.html",location.href);
+            u.searchParams.set("next","admin/posts.html");
+            location.replace(u.toString());
+        }
+    }catch(e){}})();
+</script>
+
+<!-- TOPBAR -->
+<header class="cui-topbar">
+    <div class="cui-topbar__inner container-fluid">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-link text-white d-lg-none p-0" id="btnToggleSidebar"><i class="bi bi-list fs-3"></i></button>
+            <a href="admin.html" class="d-flex align-items-center text-white text-decoration-none">
+                <img src="images/logo.png" alt="Logo" height="24" class="me-2">
+                <span class="fw-semibold">Japan Sport Admin</span>
+            </a>
+        </div>
+        <form class="cui-search ms-lg-5 me-3 d-none d-md-block" role="search">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="globalSearch" class="form-control" placeholder="Search...">
+            </div>
+        </form>
+        <ul class="cui-icons list-unstyled d-flex align-items-center mb-0 ms-auto">
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-bell fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-card-checklist fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-envelope fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-sep"></li>
+            <li class="cui-icon"><a class="text-white" href="#"><i class="bi bi-grid-3x3-gap fs-5"></i></a></li>
+            <li class="cui-icon"><a class="text-white" href="#"><i class="bi bi-brightness-high fs-5"></i></a></li>
+            <li class="cui-sep"></li>
+            <li class="dropdown">
+                <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+          <span class="avatar-wrap position-relative">
+            <img src="images/admin1.png" class="rounded-circle" width="32" height="32" alt="">
+            <span class="online"></span>
+          </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-download me-2"></i>Xuất JSON</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-upload me-2"></i>Nhập JSON</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</header>
+
+<div class="d-flex min-vh-100">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar border-end bg-white">
+        <div class="sidebar-inner">
+            <ul class="s-nav">
+                <li><a class="s-item" href="admin.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            </ul>
+            <div class="s-title">MANAGEMENT</div>
+            <ul class="s-nav">
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-box-seam me-2"></i>Sản phẩm</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="products.html"><i class="bi bi-list-ul me-2"></i>Quản lý sản phẩm</a>
+                        </li>
+                        <li><a class="s-subitem" href="categories.html"><i class="bi bi-tags me-2"></i>Danh mục sản phẩm</a>
+                        </li>
+                        <li><a class="s-subitem" href="brands.html"><i class="bi bi-badge-tm me-2"></i>Quản lý nhãn hàng</a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- Users -->
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-people me-2"></i>Users</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="users.html"><i class="bi bi-list-ul me-2"></i>Danh Sách Users</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!--Orders-->
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-receipt me-2"></i>Đơn hàng</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem active" href="orders.html"><i class="bi bi-list-ul me-2"></i>Quản lý đơn
+                            hàng</a></li>
+                    </ul>
+                </li>
+
+                <!--News-->
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-newspaper me-2"></i>Tin tức</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem active" href="news.html"><i class="bi bi-list-ul me-2"></i>Quản lý tin
+                            tức</a></li>
+                    </ul>
+                </li>
+
+                <!--Policies-->
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-shield-check me-2"></i>Chính sách</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem active" href="policies.html"><i class="bi bi-list-ul me-2"></i>Quản lý chính sách</a></li>
+                    </ul>
+                </li>
+                <!-- ==== QUẢN LÝ CHUNG ==== -->
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-sliders2 me-2"></i>Quản lý chung</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="banners.html"><i class="bi bi-images me-2"></i>Banners</a></li>
+                        <li><a class="s-subitem" href="cms-pages.html"><i class="bi bi-file-earmark-text me-2"></i>Bài
+                            viết</a></li>
+                        <li><a class="s-subitem" href="navigation.html"><i class="bi bi-menu-button-wide me-2"></i>Menu
+                            điều hướng</a></li>
+                        <li><a class="s-subitem" href="media.html"><i class="bi bi-collection me-2"></i>Thư viện
+                            media</a></li>
+                        <li><a class="s-subitem" href="promotions.html"><i class="bi bi-gift me-2"></i>Khuyến mãi / Mã
+                            giảm</a></li>
+                        <li><a class="s-subitem" href="settings.html"><i class="bi bi-gear me-2"></i>Cấu hình chung</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-grow-1 p-3">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="admin.html">Dashboard</a></li>
+                <li class="breadcrumb-item active">Bài viết</li>
+            </ol>
+        </nav>
+
+        <section>
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <h5 class="mb-0 me-auto">Bài viết</h5>
+
+                <div class="d-flex gap-2">
+                    <button id="btnCsv" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-spreadsheet"></i>
+                        Xuất CSV
+                    </button>
+                    <button id="btnPrint" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> In</button>
+                    <button id="btnReset" class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
+                    </button>
+                    <button id="btnAddBrand" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm Bài Viết
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" id="tblPosts" style="width:100%">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Ảnh</th>
+                                <th>Tiêu đề</th>
+                                <th>Danh mục</th>
+                                <th>Tags</th>
+                                <th>Tác giả</th>
+                                <th>Ngày đăng</th>
+                                <th>Lượt xem</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- DỮ LIỆU TĨNH -->
+                            <tr data-detail='{"slug":"meo-ve-sinh-giay-the-thao","excerpt":"Mẹo giữ giày luôn sạch như mới.","content":"<p>Hãy tháo dây, dùng bàn chải mềm và dung dịch dịu nhẹ...</p>","seoTitle":"Mẹo vệ sinh giày","seoDesc":"Cách vệ sinh giày thể thao đơn giản","featured":true}'>
+                                <td>POST001</td>
+                                <td><img class="thumb" src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300" alt=""></td>
+                                <td>Mẹo vệ sinh giày thể thao</td>
+                                <td>Blog</td>
+                                <td>mẹo, giày</td>
+                                <td>Admin</td>
+                                <td>2025-09-10 09:00</td>
+                                <td class="text-end">1,120</td>
+                                <td data-status="published"><span class="badge text-bg-success">Đã đăng</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye-fill me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil-fill me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash-fill me-1"></i></button>
+                                </td>
+                            </tr>
+                            <tr data-detail='{"slug":"phoi-do-chay-bo-thu-dong","excerpt":"Gợi ý phối đồ chạy bộ mùa đông.","content":"<p>Áo giữ nhiệt, quần nén, găng tay nhẹ...</p>","seoTitle":"Phối đồ chạy bộ","seoDesc":"Tips phối đồ mùa đông","featured":false}'>
+                                <td>POST002</td>
+                                <td><img class="thumb" src="https://images.unsplash.com/photo-1519861531473-9200262188bf?w=300" alt=""></td>
+                                <td>Phối đồ chạy bộ mùa đông</td>
+                                <td>Hướng dẫn</td>
+                                <td>chạy bộ, outfit</td>
+                                <td>Minh Anh</td>
+                                <td>2025-09-18 14:30</td>
+                                <td class="text-end">654</td>
+                                <td data-status="draft"><span class="badge text-bg-secondary">Nháp</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye-fill me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil-fill me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash-fill me-1"></i></button>
+                                </td>
+                            </tr>
+                            <tr data-detail='{"slug":"top-phu-kien-tap-gym","excerpt":"Top phụ kiện nên có khi tập gym.","content":"<p>Dây kháng lực, găng tay, bình nước cách nhiệt...</p>","seoTitle":"Top phụ kiện gym","seoDesc":"Danh sách phụ kiện tập gym","featured":true}'>
+                                <td>POST003</td>
+                                <td><img class="thumb" src="https://images.unsplash.com/photo-1599058917212-d750089bc07f?w=300" alt=""></td>
+                                <td>Top phụ kiện tập gym</td>
+                                <td>Danh sách</td>
+                                <td>gym, phụ kiện</td>
+                                <td>Trung Kiên</td>
+                                <td>2025-09-22 08:15</td>
+                                <td class="text-end">2,034</td>
+                                <td data-status="scheduled"><span class="badge text-bg-info">Hẹn đăng</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye-fill me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil-fill me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash-fill me-1"></i></button>
+                                </td>
+                            </tr>
+                            <!-- /DỮ LIỆU TĨNH -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- OFFCANVAS: Xem bài viết -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offPost" aria-labelledby="offPostLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offPostLabel">Xem bài viết</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body" id="postDetail">
+        Chọn “Xem” để hiển thị nội dung…
+    </div>
+</div>
+
+<!-- MODAL: Thêm/Sửa (client-side) -->
+<div class="modal fade" id="modalPost" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form class="modal-content" id="formPost">
+            <div class="modal-header">
+                <h5 class="modal-title" id="titlePost">Thêm bài viết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <label class="form-label">Mã</label>
+                        <input name="id" class="form-control" required>
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label">Tiêu đề</label>
+                        <input name="title" class="form-control" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Slug</label>
+                        <input name="slug" class="form-control" placeholder="vd: meo-ve-sinh-giay">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Danh mục</label>
+                        <select name="category" class="form-select">
+                            <option>Blog</option>
+                            <option>Hướng dẫn</option>
+                            <option>Danh sách</option>
+                            <option>Khuyến mãi</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Tác giả</label>
+                        <input name="author" class="form-control" value="Admin">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Ngày đăng</label>
+                        <input name="date" type="datetime-local" class="form-control">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Ảnh bìa (URL)</label>
+                        <input name="cover" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Trạng thái</label>
+                        <select name="status" class="form-select">
+                            <option value="published">Đã đăng</option>
+                            <option value="draft">Nháp</option>
+                            <option value="scheduled">Hẹn đăng</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Lượt xem</label>
+                        <input name="views" type="number" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="col-sm-12">
+                        <label class="form-label">Tags (phân tách dấu phẩy)</label>
+                        <input name="tags" class="form-control" placeholder="giày, mẹo, chạy bộ">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Tóm tắt</label>
+                        <textarea name="excerpt" class="form-control" rows="2" placeholder="Mô tả ngắn..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Nội dung (HTML)</label>
+                        <textarea name="content" class="form-control" rows="6" placeholder="<p>Nội dung...</p>"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <details class="mt-2">
+                            <summary class="fw-semibold">Tùy chọn SEO</summary>
+                            <div class="row g-3 mt-1">
+                                <div class="col-sm-6">
+                                    <label class="form-label">SEO Title</label>
+                                    <input name="seoTitle" class="form-control">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">SEO Description</label>
+                                    <input name="seoDesc" class="form-control">
+                                </div>
+                                <div class="col-12 form-check mt-1">
+                                    <input id="featured" name="featured" type="checkbox" class="form-check-input">
+                                    <label class="form-check-label" for="featured">Đánh dấu “Nổi bật”</label>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Huỷ</button>
+                <button class="btn btn-primary" type="submit">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<input id="fileImport" type="file" accept="application/json" hidden>
+
+<!-- Libs -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
+<!-- KHÔNG import admin.js -->
+
+<script>
+    (() => {
+        // Helpers
+        const slugify = (s) => (s||"").toString().trim().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+            .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+        const statusBadge = (code) => {
+            switch(code){
+                case 'published': return '<span class="badge text-bg-success">Đã đăng</span>';
+                case 'draft':     return '<span class="badge text-bg-secondary">Nháp</span>';
+                case 'scheduled': return '<span class="badge text-bg-info">Hẹn đăng</span>';
+                default:          return '<span class="badge text-bg-light text-dark">N/A</span>';
+            }
+        };
+
+        // DataTable
+        const dt = new DataTable('#tblPosts', {
+            pageLength: 10,
+            lengthMenu: [[10,25,50,-1], [10, 25, 50, 'Tất cả']],
+            layout: {
+                topStart: 'pageLength',
+                topEnd: 'search',
+                bottomStart: 'info',
+                bottomEnd: 'paging',
+            },
+            columnsDefs: [
+                {targets: -1, orderable: false, className: 'text-center text-nowrap'}
+            ],
+
+            language: {
+                search:'Tìm kiếm:' ,
+                lengthMenu: 'Hiển thị _MENU_ dòng',
+                info: 'Hiển thị _START_-_END_ / _TOTAL_ ',
+                infoEmpty: 'Không có dữ liệu',
+                zeroRecords: 'Không có dữ liệu',
+                paginate: {previous: 'Trước', next: 'Sau'}
+            }
+        });
+
+        // CSV export
+        document.getElementById('btnCsv')?.addEventListener('click', ()=>{
+            const table = document.getElementById('tblPosts');
+            const rows = [];
+            const headers = Array.from(table.tHead.rows[0].cells).map(th => th.textContent.trim());
+            rows.push(headers.slice(0, headers.length-1).join(',')); // bỏ cột Thao tác
+            dt.rows({search:'applied'}).every((i,row)=>{
+                const tds = Array.from(row.cells().nodes()).map(td => td.textContent.trim());
+                rows.push(tds.slice(0, headers.length-1).map(v=>`"${v.replaceAll('"','""')}"`).join(','));
+            });
+            const blob = new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+            const a=document.createElement('a');
+            a.href=URL.createObjectURL(blob);
+            a.download=`posts_${Date.now()}.csv`;
+            a.click();
+        });
+
+        // In & Reset
+        document.getElementById('btnPrint')?.addEventListener('click', ()=> window.print());
+        document.getElementById('btnReset')?.addEventListener('click', ()=>{
+            if(confirm('Khôi phục giao diện ban đầu?')) location.reload();
+        });
+
+        // Offcanvas xem chi tiết
+        const off = new bootstrap.Offcanvas('#offPost');
+        document.querySelector('#tblPosts tbody')?.addEventListener('click', (e)=>{
+            const btn = e.target.closest('[data-act="view"]');
+            if(!btn) return;
+            const tr = btn.closest('tr');
+            const djson = tr.getAttribute('data-detail');
+            let d = null;
+            try { d = djson ? JSON.parse(djson) : null; } catch(_){}
+            const id = tr.cells[0]?.textContent.trim();
+            const title = tr.cells[2]?.textContent.trim();
+            const cat = tr.cells[3]?.textContent.trim();
+            const tags = tr.cells[4]?.textContent.trim();
+            const author = tr.cells[5]?.textContent.trim();
+            const date = tr.cells[6]?.textContent.trim();
+            const views = tr.cells[7]?.textContent.trim();
+            const statusText = tr.cells[8]?.textContent.trim();
+            const cover = tr.cells[1]?.querySelector('img')?.src || '';
+
+            document.getElementById('postDetail').innerHTML = `
+      <h5 class="mb-1">${title}</h5>
+      <div class="small text-secondary mb-3">
+        <span>${cat}</span> • <span>${tags||'no-tags'}</span> • <span>${author}</span> • <span>${date}</span> • <span>${views} views</span> • <span>${statusText}</span>
+      </div>
+      ${cover ? `<img src="${cover}" class="img-fluid rounded mb-3" alt="">` : ''}
+      ${d?.excerpt ? `<p class="text-secondary">${d.excerpt}</p>` : ''}
+      <div>${d?.content || "<p class='text-secondary'>Chưa có nội dung.</p>"}</div>
+      <hr class="my-3">
+      <div class="small">
+        <div><strong>Slug:</strong> ${d?.slug||''}</div>
+        ${d?.seoTitle ? `<div><strong>SEO Title:</strong> ${d.seoTitle}</div>`:''}
+        ${d?.seoDesc ? `<div><strong>SEO Description:</strong> ${d.seoDesc}</div>`:''}
+        ${d?.featured ? `<div><span class="badge text-bg-warning mt-1">NỔI BẬT</span></div>`:''}
+      </div>
+    `;
+            off.show();
+        });
+
+        // Modal thêm/sửa
+        const postModal = new bootstrap.Modal('#modalPost');
+        const form = document.getElementById('formPost');
+        const titlePost = document.getElementById('titlePost');
+        let editingRow = null;
+
+        // auto slug
+        form?.title?.addEventListener('input', ()=>{
+            if(!form.slug.value) form.slug.value = slugify(form.title.value);
+        });
+
+        // Thêm
+        document.getElementById('btnAddPost')?.addEventListener('click', ()=>{
+            editingRow = null;
+            form.reset();
+            form.status.value = 'draft';
+            form.views.value = '0';
+            titlePost.textContent = 'Thêm bài viết';
+            postModal.show();
+        });
+
+        // Sửa / Xoá
+        document.querySelector('#tblPosts tbody')?.addEventListener('click', (e)=>{
+            const btnEdit = e.target.closest('[data-act="edit"]');
+            const btnDel  = e.target.closest('[data-act="delete"]');
+            if(btnEdit){
+                editingRow = dt.row(btnEdit.closest('tr'));
+                const tr = editingRow.node();
+                const d = (()=>{ try{ return JSON.parse(tr.getAttribute('data-detail')||'{}'); }catch(_){ return {}; }})();
+                titlePost.textContent = 'Sửa bài viết';
+                form.id.value      = tr.cells[0].textContent.trim();
+                form.cover.value   = tr.cells[1].querySelector('img')?.getAttribute('src') || '';
+                form.title.value   = tr.cells[2].textContent.trim();
+                form.slug.value    = d.slug || slugify(form.title.value);
+                form.category.value= tr.cells[3].textContent.trim();
+                form.tags.value    = tr.cells[4].textContent.trim();
+                form.author.value  = tr.cells[5].textContent.trim();
+                form.date.value    = tr.cells[6].textContent.trim().replace(' ', 'T');
+                form.views.value   = (tr.cells[7].textContent.trim()||'0').replace(/[^\d]/g,'') || '0';
+                form.status.value  = tr.cells[8].getAttribute('data-status') || 'draft';
+                form.excerpt.value = d.excerpt || '';
+                form.content.value = d.content || '';
+                form.seoTitle.value= d.seoTitle || '';
+                form.seoDesc.value = d.seoDesc || '';
+                form.featured.checked = !!d.featured;
+                postModal.show();
+            }
+            if(btnDel){
+                const row = dt.row(btnDel.closest('tr'));
+                const id = row.data()[0];
+                if(confirm(`Xoá bài ${id}? Hành động này chỉ xoá khỏi bảng hiển thị.`)){
+                    row.remove().draw(false);
+                }
+            }
+        });
+
+        // Submit modal
+        form?.addEventListener('submit', (e)=>{
+            e.preventDefault();
+            const data = {
+                id: (form.id.value||'').trim(),
+                title: (form.title.value||'').trim(),
+                slug: (form.slug.value||'').trim() || slugify(form.title.value),
+                category: (form.category.value||'').trim(),
+                tags: (form.tags.value||'').trim(),
+                author: (form.author.value||'').trim(),
+                date: (form.date.value||'').trim(),
+                cover: (form.cover.value||'').trim(),
+                status: form.status.value,
+                views: Number((form.views.value||'0')),
+                excerpt: (form.excerpt.value||'').trim(),
+                content: (form.content.value||'').trim(),
+                seoTitle: (form.seoTitle.value||'').trim(),
+                seoDesc: (form.seoDesc.value||'').trim(),
+                featured: !!form.featured.checked
+            };
+            if(!data.id || !data.title){ alert('Vui lòng nhập Mã và Tiêu đề'); return; }
+
+            const imgTd = data.cover ? `<img class="thumb" src="${data.cover}" alt="">` : "";
+            const actionTd = `
+      <div class="text-end">
+        <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye me-1"></i>Xem</button>
+        <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil me-1"></i>Sửa</button>
+        <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash me-1"></i>Xoá</button>
+      </div>`;
+
+            const detailJson = JSON.stringify({
+                slug:data.slug, excerpt:data.excerpt, content:data.content,
+                seoTitle:data.seoTitle, seoDesc:data.seoDesc, featured:data.featured
+            });
+
+            if(editingRow){
+                const tr = editingRow.node();
+                tr.setAttribute('data-detail', detailJson);
+                tr.cells[0].innerHTML = data.id;
+                tr.cells[1].innerHTML = imgTd;
+                tr.cells[2].innerHTML = data.title;
+                tr.cells[3].innerHTML = data.category;
+                tr.cells[4].innerHTML = data.tags;
+                tr.cells[5].innerHTML = data.author;
+                tr.cells[6].innerHTML = data.date ? data.date.replace('T',' ') : '';
+                tr.cells[7].innerHTML = data.views.toLocaleString('vi-VN');
+                tr.cells[8].setAttribute('data-status', data.status);
+                tr.cells[8].innerHTML = statusBadge(data.status);
+                tr.cells[9].innerHTML = actionTd;
+                editingRow.invalidate().draw(false);
+            } else {
+                const newRow = dt.row.add([
+                    data.id, imgTd, data.title, data.category, data.tags, data.author,
+                    data.date ? data.date.replace('T',' ') : '',
+                    data.views.toLocaleString('vi-VN'),
+                    statusBadge(data.status),
+                    actionTd
+                ]).draw(false).node();
+                newRow.setAttribute('data-detail', detailJson);
+                newRow.cells[8].setAttribute('data-status', data.status);
+            }
+            postModal.hide();
+        });
+    })();
+</script>
+</body>
+</html>
