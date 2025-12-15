@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="light" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Chi tiết khách hàng • Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="admin.css" rel="stylesheet">
+    <style>
+        .avatar-lg{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:#5b57ea;cursor:pointer;overflow:hidden}
+        .avatar-lg img{width:100%;height:100%;object-fit:cover}
+        .badge-status{font-weight:600}
+        /* sơ yếu lý lịch dạng key–value ở tab Thông tin */
+        .kv{display:grid;grid-template-columns:140px 1fr;gap:8px 12px}
+        .kv .k{color:#6c757d;font-weight:500}
+    </style>
+</head>
+<body>
+<script>
+    // Guard: only allow if isAdmin
+    (function(){try{
+        if(localStorage.getItem("isAdmin")!=="true"){
+            const u=new URL("../login.html",location.href);
+            u.searchParams.set("next","admin/customer_detail.html");
+            location.replace(u.toString());
+        }
+    }catch(e){}})();
+</script>
+
+<!-- TOPBAR -->
+<header class="cui-topbar">
+    <div class="cui-topbar__inner container-fluid">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-link text-white d-lg-none p-0" id="btnToggleSidebar"><i class="bi bi-list fs-3"></i></button>
+            <a href="admin.html" class="d-flex align-items-center text-white text-decoration-none">
+                <img src="https://coreui.io/images/brand/coreui-signet-white.svg" alt="" height="24" class="me-2">
+                <span class="fw-semibold">COREUI</span><span class="badge bg-white text-primary ms-2">PRO</span>
+            </a>
+        </div>
+        <form class="cui-search ms-lg-5 me-3 d-none d-md-block" role="search">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="globalSearch" class="form-control" placeholder="Search...">
+            </div>
+        </form>
+        <ul class="cui-icons list-unstyled d-flex align-items-center mb-0 ms-auto">
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-bell fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-card-checklist fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-envelope fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-sep" role="separator"></li>
+            <li class="cui-icon"><a class="text-white" href="#"><i class="bi bi-grid-3x3-gap fs-5"></i></a></li>
+            <li class="cui-icon"><a class="text-white" href="#"><i class="bi bi-brightness-high fs-5"></i></a></li>
+            <li class="cui-sep" role="separator"></li>
+            <li class="dropdown">
+                <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+          <span class="avatar-wrap position-relative">
+            <img src="images/admin1.png" class="rounded-circle" width="32" height="32" alt="">
+            <span class="online"></span>
+          </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" id="btnExport"><i class="bi bi-download me-2"></i>Xuất JSON</a></li>
+                    <li><a class="dropdown-item" href="#" id="btnImport"><i class="bi bi-upload me-2"></i>Nhập JSON</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" id="btnLogout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</header>
+
+<div class="d-flex min-vh-100">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar border-end bg-white">
+        <div class="sidebar-inner">
+            <ul class="s-nav"><li><a class="s-item" href="admin.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li></ul>
+            <div class="s-title">MANAGEMENT</div>
+            <ul class="s-nav">
+                <li><a class="s-item" href="products.html"><i class="bi bi-box-seam me-2"></i>Sản phẩm</a></li>
+                <li><a class="s-item" href="orders.html"><i class="bi bi-receipt me-2"></i>Đơn hàng</a></li>
+                <li class="has-children">
+                    <a class="s-item s-parent" href="users.html">
+                        <span><i class="bi bi-people me-2"></i>Users</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="customer.html">Customers</a></li>
+                        <li><a class="s-subitem" href="staff.html">Staff</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="s-item" href="news_admin.html"><i class="bi bi-newspaper me-2"></i>Tin tức</a></li>
+                <li><a class="s-item" href="policies.html"><i class="bi bi-shield-check me-2"></i>Chính sách</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-grow-1 p-3">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="admin.html">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="customer.html">Khách hàng</a></li>
+                <li class="breadcrumb-item active">Chi tiết</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="mb-0" id="titleName">Chi tiết khách hàng</h4>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="customer.html"><i class="bi bi-arrow-left me-1"></i> Quay lại danh sách</a>
+                <button class="btn btn-primary" id="btnEdit"><i class="bi bi-pencil-square me-1"></i> Sửa</button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Left: Profile -->
+            <div class="col-12 col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-lg" id="avatarInit">CU</div>
+                            <!-- cụm tên + ID + trạng thái, đẩy ra xa avatar -->
+                            <div class="ms-3 flex-grow-1" id="infoBlock">
+                                <div class="h5 mb-1" id="name"></div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="small text-secondary">ID: <span id="id"></span></div>
+                                    <span id="statusBadge"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nút đổi avatar dưới avatar, không ảnh hưởng layout tên/ID -->
+                        <div class="d-flex mt-2">
+                            <div style="width:110px" class="text-center">
+                                <button class="btn btn-sm btn-outline-primary" id="btnChangeAvatar">
+                                    <i class="bi bi-image me-1"></i> Đổi avatar
+                                </button>
+                                <input type="file" id="avatarInput" accept="image/*" class="d-none">
+                            </div>
+                            <div class="flex-grow-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header fw-semibold">Ghi chú</div>
+                    <div class="card-body">
+                        <textarea id="notes" class="form-control" rows="6" placeholder="Ghi chú nội bộ…"></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-secondary" id="notesMeta"></small>
+                            <button class="btn btn-sm btn-outline-primary" id="btnSaveNotes"><i class="bi bi-save me-1"></i>Lưu ghi chú</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Info + Orders + Activity -->
+            <div class="col-12 col-lg-8">
+                <ul class="nav nav-tabs" id="tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#infoTab" type="button" role="tab">Thông tin</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ordersTab" type="button" role="tab">Đơn hàng liên quan</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activityTab" type="button" role="tab">Hoạt động</button>
+                    </li>
+                </ul>
+                <div class="tab-content border-start border-end border-bottom rounded-bottom p-3">
+                    <!-- TAB 1: THÔNG TIN (sơ yếu lý lịch) -->
+                    <div class="tab-pane fade show active" id="infoTab" role="tabpanel">
+                        <div class="kv" id="infoGrid"><!-- filled by JS --></div>
+                    </div>
+
+                    <!-- TAB 2: ORDERS -->
+                    <div class="tab-pane fade" id="ordersTab" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Ngày</th>
+                                    <th>Sản phẩm</th>
+                                    <th class="text-end">Tổng</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                                </thead>
+                                <tbody id="ordersBody"><tr><td colspan="5" class="text-center text-secondary">Không có đơn hàng</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: ACTIVITY -->
+                    <div class="tab-pane fade" id="activityTab" role="tabpanel">
+                        <ul class="list-group" id="activityList"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="editForm">
+            <div class="modal-header">
+                <h5 class="modal-title">Cập nhật khách hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Họ tên</label>
+                        <input id="fName" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input id="fEmail" type="email" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">SĐT</label>
+                        <input id="fPhone" class="form-control" pattern="^[0-9+\- ]{8,15}$" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Địa chỉ</label>
+                        <input id="fAddress" class="form-control" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Trạng thái</label>
+                        <select id="fStatus" class="form-select">
+                            <option value="active">Hoạt động</option>
+                            <option value="inactive">Tạm khoá</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Số đơn</label>
+                        <input id="fOrders" type="number" min="0" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Ngày tạo</label>
+                        <input id="fCreatedAt" type="date" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ===== Utilities =====
+    const $ = (s, r=document)=> r.querySelector(s);
+    const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
+    const fmt = n => (n ?? 0).toLocaleString('vi-VN');
+    const read = (k,d=[])=>{ try{return JSON.parse(localStorage.getItem(k)) ?? d;}catch{return d;} };
+    const write = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
+    const todayStr = ()=> new Date().toISOString().slice(0,10);
+
+    function initials(str){
+        const t = (str||'').trim().split(/\s+/);
+        return (t[0]?.[0]||'') + (t.length>1 ? t[t.length-1][0]||'' : '');
+    }
+
+    // ===== Sidebar toggle (mobile)
+    $("#btnToggleSidebar")?.addEventListener("click", ()=> $("#sidebar")?.classList.add("show"));
+    document.addEventListener("click",(e)=>{ const sb=$("#sidebar"); if(!sb) return; if(e.target?.id==="btnToggleSidebar") return; if (innerWidth<992 && !sb.contains(e.target)) sb.classList.remove("show"); });
+
+    // ===== Load customer by ?id=
+    const params = new URLSearchParams(location.search);
+    const paramId = params.get('id'); // e.g., KH001
+    let customer = null;
+
+    function normalizeCustomer(obj){
+        if(!obj || typeof obj!=="object") return null;
+        // Support both shapes
+        return {
+            id: (obj.id||'').toString(),
+            fullName: (obj.fullName ?? obj.name ?? '').toString(),
+            email: (obj.email ?? '').toString(),
+            phone: (obj.phone ?? '').toString(),
+            address: (obj.address ?? '').toString(),
+            orders: Number.parseInt(obj.orders ?? 0, 10) || 0,
+            status: (obj.status==='active' ? 'active' : (obj.status==='inactive' ? 'inactive' : 'active')),
+            createdAt: (obj.createdAt ?? todayStr()).toString().slice(0,10)
+        };
+    }
+
+    function findCustomerById(id){
+        const arr = read('customers', []);
+        for(const it of arr){
+            const n = normalizeCustomer(it);
+            if(n && n.id===id) return n;
+        }
+        return null;
+    }
+
+    function badgeStatus(st){
+        return `<span class="badge ${st==='active'?'text-bg-success':'text-bg-secondary'} badge-status">${st==='active'?'Hoạt động':'Tạm khoá'}</span>`;
+    }
+
+    // ===== Avatar helpers =====
+    function loadAvatar(){
+        const avatarInit = $("#avatarInit");
+        if(!customer || !avatarInit) return;
+        const key = "avatar_" + customer.id;
+        const dataUrl = read(key, null);
+        if (dataUrl) {
+            avatarInit.innerHTML = `<img src="${dataUrl}" alt="avatar">`;
+        } else {
+            avatarInit.textContent = (initials(customer.fullName||'CU') || 'CU').toUpperCase();
+        }
+    }
+    function bindAvatarChange(){
+        const avatarInit = $("#avatarInit");
+        const avatarInput = $("#avatarInput");
+        const btnChangeAvatar = $("#btnChangeAvatar");
+        btnChangeAvatar?.addEventListener("click", () => avatarInput.click());
+        avatarInit?.addEventListener("click", () => avatarInput.click());
+        avatarInput?.addEventListener("change", (e) => {
+            const file = e.target.files?.[0];
+            if (!file || !customer) return;
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                const dataUrl = ev.target.result;
+                write("avatar_" + customer.id, dataUrl);
+                loadAvatar();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderCustomer(){
+        if(!customer){
+            $("main").innerHTML = `
+        <div class="alert alert-warning">
+          Không tìm thấy khách hàng. Vui lòng quay lại <a href="customer.html" class="alert-link">danh sách</a>.
+        </div>`;
+            return;
+        }
+        $("#titleName").textContent = customer.fullName || customer.id;
+        $("#name").textContent = customer.fullName || '—';
+        $("#id").textContent = customer.id || '—';
+        $("#statusBadge").innerHTML = badgeStatus(customer.status);
+        $("#avatarInit").textContent = (initials(customer.fullName||'CU') || 'CU').toUpperCase();
+        loadAvatar(); // nạp ảnh nếu đã lưu
+
+        // Notes
+        const nk = "customer_notes_" + customer.id;
+        const notesObj = read(nk, {text:"", updatedAt:null});
+        $("#notes").value = notesObj.text || "";
+        $("#notesMeta").textContent = notesObj.updatedAt ? ("Cập nhật: " + new Date(notesObj.updatedAt).toLocaleString('vi-VN')) : "";
+
+        renderInfo();
+    }
+
+    function saveNotes(){
+        if(!customer) return;
+        const nk = "customer_notes_" + customer.id;
+        write(nk, { text: $("#notes").value, updatedAt: Date.now() });
+        $("#notesMeta").textContent = "Cập nhật: " + new Date().toLocaleString('vi-VN');
+    }
+
+    // ===== Related Orders by name match =====
+    function statusLabel(code){
+        const map={moi:"Mới",xuly:"Đang xử lý",dagiao:"Đang giao",hoantat:"Hoàn tất",huy:"Huỷ"};
+        return map[code] || code || "—";
+    }
+
+    function renderOrders(){
+        const tbody = $("#ordersBody");
+        const all = read('orders', []);
+        const name = customer?.fullName || "";
+        const related = all.filter(o => (o.customer && o.customer.toLowerCase()===name.toLowerCase()));
+        tbody.innerHTML = "";
+        if(related.length===0){
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-secondary">Không có đơn hàng</td></tr>`;
+            return;
+        }
+        related.forEach(o=>{
+            const items = (o.items||[]).map(i=> (i.id||'') + (i.qty?` x${i.qty}`:"")).join(", ");
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td>${o.id||'—'}</td>
+        <td>${o.date||'—'}</td>
+        <td>${items||'—'}</td>
+        <td class="text-end">${fmt(o.total||0)}</td>
+        <td>${statusLabel(o.status)}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ===== Activity (simple demo)
+    function renderActivity(){
+        const ul = $("#activityList");
+        ul.innerHTML = "";
+        const items = [
+            {icon:"bi-person-plus", text:"Tạo hồ sơ", time: customer?.createdAt || todayStr() },
+            {icon:"bi-receipt", text:`Có ${customer?.orders||0} đơn hàng`, time:"Gần đây"},
+            {icon:"bi-chat-square-text", text:"Cập nhật ghi chú", time: $("#notesMeta").textContent || "Chưa có"}
+        ];
+        for(const it of items){
+            const li = document.createElement("li");
+            li.className = "list-group-item d-flex align-items-center gap-2";
+            li.innerHTML = `<i class="bi ${it.icon} text-secondary"></i><div><div>${it.text}</div><small class="text-secondary">${it.time}</small></div>`;
+            ul.appendChild(li);
+        }
+    }
+
+    // ===== Info Tab (resume style)
+    function renderInfo(){
+        if(!customer) return;
+        const g = $("#infoGrid");
+        g.innerHTML = `
+      <div class="k">Mã ID</div><div>${customer.id || '—'}</div>
+      <div class="k">Họ tên</div><div>${customer.fullName || '—'}</div>
+      <div class="k">Email</div><div>${customer.email || '—'}</div>
+      <div class="k">SĐT</div><div>${customer.phone || '—'}</div>
+      <div class="k">Địa chỉ</div><div>${customer.address || '—'}</div>
+      <div class="k">Số đơn</div><div>${fmt(customer.orders || 0)}</div>
+      <div class="k">Trạng thái</div><div>${customer.status==='active'?'Hoạt động':'Tạm khoá'}</div>
+      <div class="k">Ngày tạo</div><div>${customer.createdAt || '—'}</div>
+    `;
+    }
+
+    // ===== Edit modal
+    const editModal = new bootstrap.Modal("#editModal");
+    $("#btnEdit")?.addEventListener("click", ()=>{
+        if(!customer) return;
+        $("#fName").value = customer.fullName || "";
+        $("#fEmail").value = customer.email || "";
+        $("#fPhone").value = customer.phone || "";
+        $("#fAddress").value = customer.address || "";
+        $("#fStatus").value = customer.status || "active";
+        $("#fOrders").value = customer.orders || 0;
+        $("#fCreatedAt").value = customer.createdAt || todayStr();
+        editModal.show();
+    });
+
+    $("#editForm")?.addEventListener("submit", (e)=>{
+        e.preventDefault();
+        if(!customer) return;
+        const updated = {
+            id: customer.id,
+            fullName: $("#fName").value.trim(),
+            email: $("#fEmail").value.trim(),
+            phone: $("#fPhone").value.trim(),
+            address: $("#fAddress").value.trim(),
+            orders: parseInt($("#fOrders").value||"0",10)||0,
+            status: $("#fStatus").value==="inactive" ? "inactive" : "active",
+            createdAt: $("#fCreatedAt").value || todayStr()
+        };
+        // write back to localStorage 'customers' (normalize shapes)
+        const arr = read("customers",[]).map(c=>{
+            if((c&&c.id)===customer.id){
+                if(typeof c.fullName !== "undefined"){
+                    return Object.assign({}, c, updated);
+                }else{
+                    // shape với key 'name'
+                    const cp = Object.assign({}, c);
+                    cp.name      = updated.fullName;
+                    cp.email     = updated.email;
+                    cp.phone     = updated.phone;
+                    cp.address   = updated.address;
+                    cp.orders    = updated.orders;
+                    cp.status    = updated.status;
+                    cp.createdAt = updated.createdAt;
+                    return cp;
+                }
+            }
+            return c;
+        });
+        write("customers", arr);
+        customer = updated;
+        renderCustomer();
+        renderInfo();
+        renderOrders();
+        renderActivity();
+        editModal.hide();
+    });
+
+    // ===== Export/Import/Logout like other pages
+    $("#btnExport")?.addEventListener("click", ()=>{
+        const blob = new Blob([JSON.stringify({
+            products: read("products",[]),
+            orders: read("orders",[]),
+            customers: read("customers",[])
+        }, null, 2)], {type:"application/json"});
+        const a=document.createElement("a");
+        a.href=URL.createObjectURL(blob);
+        a.download="backup_"+Date.now()+".json";
+        a.click();
+    });
+    $("#btnImport")?.addEventListener("click", ()=> alert("Vào Dashboard để dùng chức năng nhập JSON."));
+    $("#btnLogout")?.addEventListener("click", ()=>{ localStorage.removeItem("isAdmin"); location.href="../login.html"; });
+
+    // ===== Init
+    document.addEventListener("DOMContentLoaded", ()=>{
+        if(!paramId){
+            $("main").innerHTML = `<div class='alert alert-warning'>Thiếu tham số <code>?id=</code>. Hãy mở từ trang Khách hàng.</div>`;
+            return;
+        }
+        customer = findCustomerById(paramId);
+        bindAvatarChange();
+        renderCustomer();
+        renderOrders();
+        renderActivity();
+        $("#btnSaveNotes").addEventListener("click", ()=>{ saveNotes(); renderActivity(); });
+    });
+</script>
+</body>
+</html>

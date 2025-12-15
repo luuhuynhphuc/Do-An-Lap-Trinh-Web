@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="light">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Khuyến mãi / Mã giảm • Admin</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- DataTables v2 + Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
+    <!-- App CSS -->
+    <link href="admin.css" rel="stylesheet">
+
+    <style>
+        .table td .badge {font-weight:600}
+        .thumb {width:46px;height:46px;border-radius:8px;object-fit:cover}
+        .kv {display:grid;grid-template-columns:140px 1fr;gap:8px 12px}
+        .kv .k{color:#6c757d;font-weight:500}
+        .promo-chip{display:inline-flex;align-items:center;gap:6px;padding:.25rem .6rem;border:1px solid #dee2e6;border-radius:999px;background:#fff;margin:2px}
+    </style>
+</head>
+<body>
+<script>
+    // Chặn truy cập nếu chưa "đăng nhập admin"
+    (function(){try{
+        if(localStorage.getItem("isAdmin")!=="true"){
+            const u=new URL("../login.html",location.href);
+            u.searchParams.set("next","admin/promotions.html");
+            location.replace(u.toString());
+        }
+    }catch(e){}})();
+</script>
+
+<!-- TOPBAR -->
+<header class="cui-topbar">
+    <div class="cui-topbar__inner container-fluid">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-link text-white d-lg-none p-0" id="btnToggleSidebar"><i class="bi bi-list fs-3"></i></button>
+            <a href="admin.html" class="d-flex align-items-center text-white text-decoration-none">
+                <img src="images/logo.png" alt="Logo" height="24" class="me-2">
+                <span class="fw-semibold">Japan Sport Admin</span>
+            </a>
+        </div>
+        <form class="cui-search ms-lg-5 me-3 d-none d-md-block" role="search">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="globalSearch" class="form-control" placeholder="Search...">
+            </div>
+        </form>
+        <ul class="cui-icons list-unstyled d-flex align-items-center mb-0 ms-auto">
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-bell fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-card-checklist fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-envelope fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-sep" role="separator"></li>
+            <li class="dropdown">
+                <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+          <span class="avatar-wrap position-relative">
+            <img src="images/admin1.png" class="rounded-circle" width="32" height="32" alt="">
+            <span class="online"></span>
+          </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" id="btnExport"><i class="bi bi-download me-2"></i>Xuất JSON</a></li>
+                    <li><a class="dropdown-item" href="#" id="btnImport"><i class="bi bi-upload me-2"></i>Nhập JSON</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" id="btnLogout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</header>
+
+<div class="d-flex min-vh-100">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar border-end bg-white">
+        <div class="sidebar-inner">
+            <ul class="s-nav">
+                <li><a class="s-item" href="admin.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            </ul>
+            <div class="s-title">MANAGEMENT</div>
+            <ul class="s-nav">
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-box-seam me-2"></i>Sản phẩm</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="products.html"><i class="bi bi-list-ul me-2"></i>Quản lý sản phẩm</a></li>
+                        <li><a class="s-subitem" href="categories.html"><i class="bi bi-tags me-2"></i>Danh mục sản phẩm</a></li>
+                        <li><a class="s-subitem" href="brands.html"><i class="bi bi-badge-tm me-2"></i>Quản lý nhãn hàng</a></li>
+                    </ul>
+                </li>
+
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-people me-2"></i>Users</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="users.html"><i class="bi bi-list-ul me-2"></i>Danh Sách Users</a></li>
+                    </ul>
+                </li>
+
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-receipt me-2"></i>Đơn hàng</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="orders.html"><i class="bi bi-list-ul me-2"></i>Quản lý đơn hàng</a></li>
+                    </ul>
+                </li>
+
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-newspaper me-2"></i>Tin tức</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="news.html"><i class="bi bi-list-ul me-2"></i>Quản lý tin tức</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="s-item" href="policies.html"><i class="bi bi-shield-check me-2"></i>Chính sách</a></li>
+
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-sliders2 me-2"></i>Quản lý chung</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="banners.html"><i class="bi bi-images me-2"></i>Banners</a></li>
+                        <li><a class="s-subitem" href="post.html"><i class="bi bi-file-earmark-text me-2"></i>Bài viết</a></li>
+                        <li><a class="s-subitem" href="navigation.html"><i class="bi bi-menu-button-wide me-2"></i>Menu điều hướng</a></li>
+                        <li><a class="s-subitem" href="media.html"><i class="bi bi-collection me-2"></i>Thư viện media</a></li>
+                        <li><a class="s-subitem active" href="promotions.html"><i class="bi bi-gift me-2"></i>Khuyến mãi / Mã giảm</a></li>
+                        <li><a class="s-subitem" href="settings.html"><i class="bi bi-gear me-2"></i>Cấu hình chung</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-grow-1 p-3">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="admin.html">Dashboard</a></li>
+                <li class="breadcrumb-item active">Khuyến mãi / Mã giảm</li>
+            </ol>
+        </nav>
+
+        <section>
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <h3 class="mb-0 me-auto">Khuyến mãi / Mã giảm</h3>
+                <div class="d-flex gap-2">
+                    <button id="btnCsv" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-spreadsheet"></i> Xuất CSV</button>
+                    <button id="btnPrint" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> In</button>
+                    <button id="btnReset" class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                    <button id="btnAddPromo" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm khuyến mãi</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" id="tblPromos" style="width:100%">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên CT</th>
+                                <th>Loại</th>
+                                <th>Mã áp dụng</th>
+                                <th>Mức giảm</th>
+                                <th>Điều kiện</th>
+                                <th>Hiệu lực</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- DỮ LIỆU TĨNH DEMO -->
+                            <tr data-detail='{"desc":"Giảm 20% tối đa 200k cho đơn từ 500k","channels":["Website","Shopee"],"appliesTo":"Tất cả sản phẩm","limit":"10,000 lượt"}'>
+                                <td>PRM001</td>
+                                <td>Khai trương 9/2025</td>
+                                <td>Voucher (%)</td>
+                                <td>OPEN20</td>
+                                <td>-20% (tối đa 200.000)</td>
+                                <td>ĐH ≥ 500.000</td>
+                                <td>2025-09-01 → 2025-09-30</td>
+                                <td data-status="active"><span class="badge text-bg-success">Đang chạy</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash me-1"></i></button>
+                                </td>
+                            </tr>
+                            <tr data-detail='{"desc":"Mua 2 tính tiền 1 với nhóm tất vớ","channels":["Website"],"appliesTo":"Danh mục: Phụ kiện","limit":"Không giới hạn"}'>
+                                <td>PRM002</td>
+                                <td>Mua 1 tặng 1 – Tất</td>
+                                <td>Mua kèm giảm</td>
+                                <td>-</td>
+                                <td>BOGO (1+1)</td>
+                                <td>Áp dụng theo cặp</td>
+                                <td>2025-10-01 → 2025-10-15</td>
+                                <td data-status="scheduled"><span class="badge text-bg-info">Hẹn</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash me-1"></i></button>
+                                </td>
+                            </tr>
+                            <tr data-detail='{"desc":"Giảm thẳng 100k cho đơn từ 800k","channels":["Website","Cửa hàng"],"appliesTo":"Tất cả sản phẩm","limit":"5,000 lượt"}'>
+                                <td>PRM003</td>
+                                <td>Tặng 100k ĐH ≥ 800k</td>
+                                <td>Voucher (đ)</td>
+                                <td>GIFT100K</td>
+                                <td>-100.000</td>
+                                <td>ĐH ≥ 800.000</td>
+                                <td>2025-09-10 → 2025-10-31</td>
+                                <td data-status="paused"><span class="badge text-bg-secondary">Tạm dừng</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil me-1"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash me-1"></i></button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- OFFCANVAS: Xem khuyến mãi -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offPromo">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Chi tiết khuyến mãi</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body" id="promoDetail">Chọn “Xem” để hiển thị chi tiết…</div>
+</div>
+
+<!-- MODAL: Thêm/Sửa (client-side) -->
+<div class="modal fade" id="modalPromo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form class="modal-content" id="formPromo">
+            <div class="modal-header">
+                <h5 class="modal-title" id="titlePromo">Thêm khuyến mãi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <label class="form-label">Mã</label>
+                        <input name="id" class="form-control" required>
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label">Tên chương trình</label>
+                        <input name="title" class="form-control" required>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label">Loại</label>
+                        <select name="type" class="form-select">
+                            <option value="percent">Voucher (%)</option>
+                            <option value="amount">Voucher (đ)</option>
+                            <option value="bundle">Mua kèm giảm</option>
+                            <option value="bogo">BOGO (mua 1 tặng 1)</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label">Mã áp dụng (nếu có)</label>
+                        <input name="code" class="form-control" placeholder="OPEN20 / GIFT100K ...">
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label">Giá trị (%, đ, …)</label>
+                        <input name="value" class="form-control" placeholder="20 / 100000 / 1+1 ...">
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label class="form-label">Điều kiện (min order)</label>
+                        <input name="minOrder" class="form-control" placeholder="500000">
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label">Áp dụng cho</label>
+                        <input name="appliesTo" class="form-control" placeholder="Tất cả / danh mục / sản phẩm ...">
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label">Bắt đầu</label>
+                        <input type="date" name="start" class="form-control">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Kết thúc</label>
+                        <input type="date" name="end" class="form-control">
+                    </div>
+
+                    <div class="col-sm-6">
+                        <label class="form-label">Kênh</label>
+                        <input name="channels" class="form-control" placeholder="Website, Shopee, Cửa hàng...">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Giới hạn lượt dùng</label>
+                        <input name="limit" class="form-control" placeholder="Không giới hạn / 10000 ...">
+                    </div>
+
+                    <div class="col-sm-4">
+                        <label class="form-label">Trạng thái</label>
+                        <select name="status" class="form-select">
+                            <option value="active" selected>Đang chạy</option>
+                            <option value="scheduled">Hẹn</option>
+                            <option value="paused">Tạm dừng</option>
+                            <option value="ended">Kết thúc</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Libs -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.js"></script>
+
+<script>
+    // Helpers nhẹ (tự lập, không phụ thuộc admin.js)
+    const $el = (s,r=document)=>r.querySelector(s);
+    const $$el = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+    // Sidebar toggle (mobile)
+    $el("#btnToggleSidebar")?.addEventListener("click", ()=> $el("#sidebar")?.classList.add("show"));
+    document.addEventListener("click",(e)=>{
+        const sb=$el("#sidebar");
+        if(!sb) return;
+        if(e.target?.id==="btnToggleSidebar") return;
+        if(window.innerWidth<992 && !sb.contains(e.target)) sb.classList.remove("show");
+    });
+
+    // Global search (ẩn/hiện dòng theo text)
+    $el("#globalSearch")?.addEventListener("input",(e)=>{
+        const q = e.target.value.trim().toLowerCase();
+        document.querySelectorAll("#tblPromos tbody tr").forEach(tr=>{
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+        });
+    });
+
+    // DataTables (tuỳ chọn)
+    $(document).ready(function(){
+        $('#tblPromos').DataTable({
+            paging:true, searching:false, info:false,
+            order:[[0,'asc']]
+        });
+    });
+
+    // Xem chi tiết (offcanvas)
+    const offPromo = new bootstrap.Offcanvas("#offPromo");
+    $("#tblPromos").on("click",'[data-act=\"view\"]', function(){
+        const tr = this.closest('tr');
+        const d  = JSON.parse(tr.getAttribute('data-detail') || "{}");
+        const statusCell = tr.querySelector('[data-status]')?.getAttribute('data-status') || 'unknown';
+        $el("#promoDetail").innerHTML = `
+      <div class="kv">
+        <div class="k">Mã chương trình</div><div>${tr.children[0].textContent}</div>
+        <div class="k">Tên</div><div>${tr.children[1].textContent}</div>
+        <div class="k">Loại</div><div>${tr.children[2].textContent}</div>
+        <div class="k">Mã áp dụng</div><div>${tr.children[3].textContent}</div>
+        <div class="k">Mức giảm</div><div>${tr.children[4].textContent}</div>
+        <div class="k">Điều kiện</div><div>${tr.children[5].textContent}</div>
+        <div class="k">Hiệu lực</div><div>${tr.children[6].textContent}</div>
+        <div class="k">Trạng thái</div><div class="text-capitalize">${statusCell}</div>
+        <div class="k">Mô tả</div><div>${d.desc || ""}</div>
+        <div class="k">Kênh</div><div>${(d.channels||[]).map(c=>`<span class="promo-chip">${c}</span>`).join("")}</div>
+        <div class="k">Áp dụng</div><div>${d.appliesTo||""}</div>
+        <div class="k">Giới hạn</div><div>${d.limit||"Không"}</div>
+      </div>`;
+        offPromo.show();
+    });
+
+    // Thêm/Sửa demo (client-side in-memory)
+    const modalPromo = new bootstrap.Modal("#modalPromo");
+    $("#btnAddPromo").on("click", ()=>{
+        $("#formPromo")[0].reset();
+        $("#titlePromo").text("Thêm khuyến mãi");
+        modalPromo.show();
+    });
+
+    // Nhấn sửa: đổ dữ liệu dòng vào form
+    $("#tblPromos").on("click",'[data-act=\"edit\"]', function(){
+        const tr = this.closest('tr');
+        $("#titlePromo").text("Sửa khuyến mãi");
+        const [id,title,type,code,value,cond,range,statusCell] = Array.from(tr.children).slice(0,8).map(td=>td.textContent.trim());
+        const f = $("#formPromo")[0];
+        f.id.value=id; f.title.value=title;
+        // map sơ bộ type text → select value
+        f.type.value = /Voucher \(%\)/i.test(type) ? "percent" :
+            /Voucher \(đ\)/i.test(type) ? "amount" :
+                /Mua kèm/i.test(type) ? "bundle" : "bogo";
+        f.code.value=code==="-"?"":code;
+        f.value.value=value.replace(/[^\d+%]+/g,"").replace(/^$/,'');
+        f.minOrder.value=cond.replace(/\D/g,"");
+        const m = (range||"").split("→").map(s=>s.trim());
+        if(m[0]) f.start.value = m[0].replaceAll("/","-");
+        if(m[1]) f.end.value   = m[1].replaceAll("/","-");
+        f.appliesTo.value="";
+        f.channels.value="";
+        f.limit.value="";
+        // suy đoán trạng thái
+        if(/Đang chạy/i.test(statusCell)) f.status.value="active";
+        else if(/Hẹn/i.test(statusCell)) f.status.value="scheduled";
+        else if(/Tạm dừng/i.test(statusCell)) f.status.value="paused";
+        else f.status.value="ended";
+        modalPromo.show();
+    });
+
+    // Lưu (demo): chỉ hiển thị alert, không ghi LocalStorage
+    $("#formPromo").on("submit", function(e){
+        e.preventDefault();
+        modalPromo.hide();
+        alert("Đây là trang tĩnh demo: dữ liệu không được lưu. Bạn có thể tích hợp LocalStorage/Backend sau.");
+    });
+
+    // Xoá (demo)
+    $("#tblPromos").on("click",'[data-act=\"delete\"]', function(){
+        if(confirm("Xoá khuyến mãi này?")){
+            const tr = this.closest('tr');
+            const dt = $('#tblPromos').DataTable();
+            dt.row(tr).remove().draw();
+        }
+    });
+
+    // Export / Import / Logout (demo giống các trang khác)
+    $("#btnExport").on("click", ()=>{
+        const rows = Array.from(document.querySelectorAll("#tblPromos tbody tr")).map(tr=> ({
+            id: tr.children[0].textContent.trim(),
+            title: tr.children[1].textContent.trim(),
+            type: tr.children[2].textContent.trim(),
+            code: tr.children[3].textContent.trim(),
+            value: tr.children[4].textContent.trim(),
+            condition: tr.children[5].textContent.trim(),
+            range: tr.children[6].textContent.trim(),
+            status: tr.querySelector("[data-status]")?.getAttribute("data-status")||""
+        }));
+        const blob = new Blob([JSON.stringify({promotions: rows}, null, 2)],{type:"application/json"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "promotions_demo.json";
+        a.click();
+    });
+
+    $("#btnImport").on("click", ()=> $("#fileImport")[0].click());
+    document.body.insertAdjacentHTML("beforeend", '<input id="fileImport" type="file" accept="application/json" hidden>');
+    $("#fileImport").on("change", async function(){
+        const f=this.files?.[0]; if(!f) return;
+        try{
+            const j = JSON.parse(await f.text());
+            if(Array.isArray(j.promotions)){
+                const dt = $('#tblPromos').DataTable();
+                dt.clear();
+                j.promotions.forEach(p=>{
+                    dt.row.add([
+                        p.id||"", p.title||"", p.type||"", p.code||"",
+                        p.value||"", p.condition||"", p.range||"",
+                        `<span class="badge ${p.status==='active'?'text-bg-success':p.status==='scheduled'?'text-bg-info':p.status==='paused'?'text-bg-secondary':'text-bg-secondary'}">${p.status||""}</span>`,
+                        `<div class="text-center">
+              <button class="btn btn-sm btn-outline-primary" data-act="view"><i class="bi bi-eye me-1"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" data-act="edit"><i class="bi bi-pencil me-1"></i></button>
+              <button class="btn btn-sm btn-outline-danger" data-act="delete"><i class="bi bi-trash me-1"></i></button>
+            </div>`
+                    ]);
+                });
+                dt.draw();
+                alert("Đã import (demo hiển thị).");
+            } else alert("File không đúng định dạng {promotions: [...]}");
+        }catch(err){ alert("File JSON không hợp lệ"); }
+        this.value="";
+    });
+
+    $("#btnLogout").on("click", ()=>{
+        localStorage.removeItem("isAdmin");
+        location.href="../login.html";
+    });
+</script>
+</body>
+</html>

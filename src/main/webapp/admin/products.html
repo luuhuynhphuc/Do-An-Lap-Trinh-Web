@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="light">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Sản phẩm • Admin</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- DataTables jQuery + Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.10/css/dataTables.bootstrap5.min.css"
+          rel="stylesheet">
+
+    <!-- App CSS của bạn -->
+    <link href="admin.css" rel="stylesheet">
+
+    <!-- Quill editor CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+
+    <style>
+        /* Bổ sung UI riêng của trang (không đụng admin.css tổng) */
+        .table td img.thumb {
+            width: 46px;
+            height: 46px;
+            object-fit: cover;
+            border-radius: 8px
+        }
+
+        .dropzone {
+            border: 2px dashed #cfd3dc;
+            border-radius: 10px;
+            padding: 14px;
+            background: #fafbff;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .dropzone.dragover {
+            background: #eef2ff;
+            border-color: #5b57ea
+        }
+
+        .thumbs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px
+        }
+
+        .thumbs img {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e9ecef
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: .35rem .6rem;
+            margin: 2px;
+            border: 1px solid #dbe0ea;
+            border-radius: 999px;
+            background: #fff;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chip input {
+            display: none
+        }
+
+        .chip.active {
+            background: #efefff;
+            border-color: #5b57ea;
+            color: #5b57ea
+        }
+
+        #offGallery img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            margin: 2px
+        }
+
+        #offProduct {
+            --bs-offcanvas-width: 720px;
+            max-width: 100vw
+        }
+
+        /* Offcanvas: ảnh to + gallery nhỏ */
+        #offGallery .main-img {
+            width: 100%;
+            max-width: 360px; /* chỉnh 320–480 tuỳ ý */
+            height: auto;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+        }
+
+        #offGallery .thumbs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        #offGallery .thumb-img {
+            width: 84px;
+            height: 84px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: transform .12s ease;
+        }
+
+        #offGallery .thumb-img:hover {
+            transform: scale(1.03);
+        }
+
+        #offGallery .thumb-img.active {
+            outline: 2px solid #4f46e5;
+            outline-offset: 2px;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<!--  Topbar + logo + icon thông báo -->
+<header class="cui-topbar">
+    <div class="cui-topbar__inner container-fluid">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-link text-white d-lg-none p-0" id="btnToggleSidebar"><i class="bi bi-list fs-3"></i>
+            </button>
+            <a href="admin.html" class="d-flex align-items-center text-white text-decoration-none">
+                <img src="images/logo.png" alt="Logo" height="24" class="me-2">
+                <span class="fw-semibold">Japan Sport Admin</span>
+            </a>
+        </div>
+        <form class="cui-search ms-lg-5 me-3 d-none d-md-block" role="search">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="globalSearch" class="form-control" placeholder="Search.">
+            </div>
+        </form>
+        <ul class="cui-icons list-unstyled d-flex align-items-center mb-0 ms-auto">
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i class="bi bi-bell fs-5"></i><span
+                    class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i
+                    class="bi bi-card-checklist fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-icon"><a class="text-white position-relative" href="#"><i
+                    class="bi bi-envelope fs-5"></i><span class="dot"></span></a></li>
+            <li class="cui-sep" role="separator"></li>
+            <li class="dropdown">
+                <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#"
+                   data-bs-toggle="dropdown">
+          <span class="avatar-wrap position-relative">
+            <img src="images/admin1.png" class="rounded-circle" width="32" height="32" alt="">
+            <span class="online"></span>
+          </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" id="btnExport"><i class="bi bi-download me-2"></i>Xuất
+                        JSON</a></li>
+                    <li><a class="dropdown-item" href="#" id="btnImport"><i class="bi bi-upload me-2"></i>Nhập JSON</a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item text-danger" href="#" id="btnLogout"><i
+                            class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</header>
+
+<div class="d-flex min-vh-100">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar border-end bg-white">
+        <div class="sidebar-inner">
+            <ul class="s-nav">
+                <li><a class="s-item" href="admin.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            </ul>
+            <div class="s-title">MANAGEMENT</div>
+            <ul class="s-nav">
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-box-seam me-2"></i>Sản phẩm</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="products.html"><i class="bi bi-list-ul me-2"></i>Quản lý sản phẩm</a>
+                        </li>
+                        <li><a class="s-subitem" href="categories.html"><i class="bi bi-tags me-2"></i>Danh mục sản phẩm</a>
+                        </li>
+                        <li><a class="s-subitem" href="brands.html"><i class="bi bi-badge-tm me-2"></i>Quản lý nhãn hàng</a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- Users -->
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-people me-2"></i>Users</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="users.html"><i class="bi bi-list-ul me-2"></i>Danh Sách Users</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!--Orders-->
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-receipt me-2"></i>Đơn hàng</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem active" href="orders.html"><i class="bi bi-list-ul me-2"></i>Quản lý đơn
+                            hàng</a></li>
+                    </ul>
+                </li>
+
+                <!--News-->
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-newspaper me-2"></i>Tin tức</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem active" href="news.html"><i class="bi bi-list-ul me-2"></i>Quản lý tin
+                            tức</a></li>
+                    </ul>
+                </li>
+
+                <!--Policies-->
+                <li class="has-children force-open">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-shield-check me-2"></i>Chính sách</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem active" href="policies.html"><i class="bi bi-list-ul me-2"></i>Quản lý
+                            chính sách</a></li>
+                    </ul>
+                </li>
+                <!-- ==== QUẢN LÝ CHUNG ==== -->
+                <li class="has-children">
+                    <a class="s-item s-parent" href="#" onclick="return false;">
+                        <span><i class="bi bi-sliders2 me-2"></i>Quản lý chung</span>
+                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                    </a>
+                    <ul class="s-subnav">
+                        <li><a class="s-subitem" href="banners.html"><i class="bi bi-images me-2"></i>Banners</a></li>
+                        <li><a class="s-subitem" href="cms-pages.html"><i class="bi bi-file-earmark-text me-2"></i>Bài
+                            viết</a></li>
+                        <li><a class="s-subitem" href="navigation.html"><i class="bi bi-menu-button-wide me-2"></i>Menu
+                            điều hướng</a></li>
+                        <li><a class="s-subitem" href="media.html"><i class="bi bi-collection me-2"></i>Thư viện
+                            media</a></li>
+                        <li><a class="s-subitem" href="promotions.html"><i class="bi bi-gift me-2"></i>Khuyến mãi / Mã
+                            giảm</a></li>
+                        <li><a class="s-subitem" href="settings.html"><i class="bi bi-gear me-2"></i>Cấu hình chung</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-grow-1 p-3">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="admin.html">Dashboard</a></li>
+                <li class="breadcrumb-item">Sản phẩm</li>
+                <li class="breadcrumb-item active">Quản lý nhãn hàng</li>
+            </ol>
+        </nav>
+        <section>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="mb-0">Quản lý sản phẩm</h3>
+                <div class="d-flex gap-2">
+                    <button id="btnCsv" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-spreadsheet"></i>
+                        Xuất CSV
+                    </button>
+                    <button id="btnPrint" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> In</button>
+                    <button id="btnReset" class="btn btn-outline-danger"><i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
+                    </button>
+                    <button id="btnAddProduct" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm sản phẩm
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tblProducts" class="table table-hover align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Ảnh</th>
+                                <th>Tên</th>
+                                <th>Danh mục</th>
+                                <th>Nhãn hàng</th>
+                                <th>Giá</th>
+                                <th>Tồn</th>
+                                <th>Hiển thị</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>SP001</td>
+                                <td><img class="thumb" src="https://picsum.photos/seed/p1/200/200" alt=""></td>
+                                <td>Áo thun LUMI Basics</td>
+                                <td>Thời trang</td>
+                                <td>LUMIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII</td>
+                                <td>199.000</td>
+                                <td>120</td>
+                                <td><span class="badge text-bg-success">Hiển thị</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-info bi bi-eye-fill me-1 " data-act="detail"></button>
+                                    <button class="btn btn-sm btn-outline-secondary bi bi-pencil-fill me-1"></button>
+                                    <button class="btn btn-sm btn-outline-danger bi bi-trash-fill me-1"></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SP002</td>
+                                <td><img class="thumb" src="https://picsum.photos/seed/p2/200/200" alt=""></td>
+                                <td>Bàn chải LUMI SoftCare</td>
+                                <td>Oral care</td>
+                                <td>LUMI</td>
+                                <td>59.000</td>
+                                <td>350</td>
+                                <td><span class="badge text-bg-success">Hiển thị</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-info bi bi-eye-fill me-1 " data-act="detail"></button>
+                                    <button class="btn btn-sm btn-outline-secondary bi bi-pencil-fill me-1"></button>
+                                    <button class="btn btn-sm btn-outline-danger bi bi-trash-fill me-1"></button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- MODAL: Thêm / Sửa -->
+<div class="modal fade" id="modalProduct" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl ">
+        <div class="modal-content">
+            <form id="formProduct" autocomplete="off">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="titleProduct">Thêm sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-3">
+                            <label class="form-label">Mã sản phẩm <span class="text-danger">*</span></label>
+                            <input name="id" class="form-control" placeholder="VD: SP123">
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input name="name" class="form-control" placeholder="Nhập tên">
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label">Giá (VNĐ)</label>
+                            <input name="price" type="number" class="form-control" min="0" step="1000" placeholder="0">
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label">Tồn kho</label>
+                            <input name="stock" type="number" class="form-control" min="0" step="1" placeholder="0">
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label class="form-label">Danh mục</label>
+                            <input name="category" class="form-control" placeholder="Nhập danh mục">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Nhãn hàng</label>
+                            <input name="brand" class="form-control" placeholder="VD: LUMI">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Trạng thái hiển thị</label>
+                            <select name="published" class="form-select">
+                                <option value="true" selected>Hiển thị</option>
+                                <option value="false">Ẩn</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Ảnh sản phẩm</label>
+                            <div id="dz" class="dropzone">
+                                Thả ảnh vào đây hoặc <u>nhấn để chọn</u> (tối đa 8 ảnh)
+                                <input id="filePicker" type="file" accept="image/*" multiple hidden>
+                            </div>
+                            <div class="small text-secondary mt-1">Ảnh đầu tiên sẽ dùng làm thumbnail ở bảng</div>
+                            <div id="thumbs" class="thumbs"></div>
+
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Kích thước (Sizes)</label>
+                            <div id="sizesWrap">
+                                <label class="chip"><input type="checkbox" value="S">S</label>
+                                <label class="chip"><input type="checkbox" value="M">M</label>
+                                <label class="chip"><input type="checkbox" value="L">L</label>
+                                <label class="chip"><input type="checkbox" value="XL">XL</label>
+                                <label class="chip"><input type="checkbox" value="40">40</label>
+                                <label class="chip"><input type="checkbox" value="41">41</label>
+                                <label class="chip"><input type="checkbox" value="42">42</label>
+                                <label class="chip"><input type="checkbox" value="43">43</label>
+                            </div>
+                            <div class="input-group mt-2" style="max-width:340px">
+                                <input id="sizeCustom" class="form-control" placeholder="Thêm size tuỳ ý (2XL / 44.5)">
+                                <button id="btnAddSize" class="btn btn-outline-secondary" type="button">Thêm</button>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Mô tả (Rich text)</label>
+                            <div id="descEditor" style="height: 200px"></div>
+                            <textarea name="description" class="form-control d-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- OFFCANVAS: Chi tiết -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offProduct" aria-labelledby="offProductLabel">
+    <div class="offcanvas-header">
+        <h5 id="offProductLabel">Chi tiết sản phẩm</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div id="offGallery" class="d-flex flex-wrap"></div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-1"><span class="text-secondary">Mã:</span> <span id="offId" class="fw-semibold"></span>
+                </div>
+                <div class="mb-1"><span class="text-secondary">Tên:</span> <span id="offName"
+                                                                                 class="fw-semibold"></span></div>
+                <div class="mb-1"><span class="text-secondary">Danh mục:</span> <span id="offCat"></span></div>
+                <div class="mb-1"><span class="text-secondary">Nhãn hàng:</span> <span id="offBrand"></span></div>
+                <div class="mb-1"><span class="text-secondary">Giá:</span> <span id="offPrice"
+                                                                                 class="fw-semibold"></span></div>
+                <div class="mb-1"><span class="text-secondary">Tồn kho:</span> <span id="offStock"></span></div>
+                <div class="mb-1"><span class="text-secondary">Hiển thị:</span> <span id="offPub" class="badge"></span>
+                </div>
+                <div class="mt-2">
+                    <div class="text-secondary">Sizes:</div>
+                    <div id="offSizes"></div>
+                </div>
+            </div>
+            <div class="col-12">
+                <hr>
+                <div class="text-secondary mb-1">Mô tả:</div>
+                <div id="offDesc" class="border rounded p-2 bg-white"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS libs: jQuery trước, rồi Bootstrap, rồi DataTables jQuery, rồi Quill -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.10/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.10/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+
+<script>
+    (() => {
+        // Sidebar mobile
+        const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        btnToggleSidebar?.addEventListener('click', () => sidebar.classList.toggle('show'));
+
+        // Helpers
+        const moneyVN = n => Number(n || 0).toLocaleString('vi-VN');
+        const badge = on => on ? '<span class="badge text-bg-success">Hiển thị</span>' : '<span class="badge text-bg-secondary">Ẩn</span>';
+        const productExtra = new Map(); // id -> { images:[], sizes:[], descHtml:"" }
+
+        // DataTable
+        const dt = new DataTable('#tblProducts', {
+            // Phân trang giống users
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Tất cả']],
+
+            // Bố cục có dropdown số dòng (pageLength) + ô tìm kiếm mặc định của DataTable
+            layout: {
+                topStart: 'pageLength',
+                topEnd: 'search',
+                bottomStart: 'info',
+                bottomEnd: 'paging'
+            },
+
+            columnDefs: [
+                {targets: -1, orderable: false, className: 'text-end text-nowrap'}
+            ],
+
+
+            // Việt hoá
+            language: {
+                search: 'Tìm kiếm:',
+                lengthMenu: 'Hiển thị _MENU_ dòng',
+                info: 'Hiển thị _START_–_END_ / _TOTAL_',
+                infoEmpty: 'Không có dữ liệu',
+                zeroRecords: 'Không có dữ liệu',
+                paginate: {previous: 'Trước', next: 'Sau'}
+            }
+        });
+
+        // Modal/Form
+        const productModal = new bootstrap.Modal(document.getElementById("modalProduct"));
+        const form = document.getElementById("formProduct");
+        const title = document.getElementById("titleProduct");
+        let editingRow = null;
+
+        // Quill
+        const quill = new Quill('#descEditor', {
+            theme: 'snow',
+            placeholder: 'Nhập mô tả sản phẩm…',
+            modules: {
+                toolbar: [
+                    [{header: [1, 2, false]}],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{'list': 'ordered'}, {'list': 'bullet'}],
+                    ['link', 'image', 'blockquote', 'code-block', 'clean']
+                ]
+            }
+        });
+
+        // Dropzone
+        const dz = document.getElementById("dz");
+        const filePicker = document.getElementById("filePicker");
+        const thumbs = document.getElementById("thumbs");
+        let dzImages = [];
+
+        function renderThumbs() {
+            thumbs.innerHTML = dzImages.map((src, i) => (
+                `<div class="position-relative">
+         <img src="${src}">
+         <button type="button" class="btn btn-sm btn-light position-absolute top-0 end-0" data-del="${i}" title="Xoá ảnh">
+           <i class="bi bi-x"></i>
+         </button>
+         ${i === 0 ? '<span class="badge text-bg-primary position-absolute bottom-0 start-0">Thumb</span>' : ''}
+       </div>`
+            )).join("");
+            thumbs.querySelectorAll('[data-del]').forEach(btn => {
+                btn.onclick = () => {
+                    dzImages.splice(Number(btn.dataset.del), 1);
+                    renderThumbs();
+                };
+            });
+        }
+
+        function addFiles(files) {
+            for (const f of Array.from(files || [])) {
+                if (!/^image\//.test(f.type)) continue;
+                dzImages.push(URL.createObjectURL(f)); // tĩnh 100%
+                if (dzImages.length >= 8) break;
+            }
+            dzImages = dzImages.slice(0, 8);
+            renderThumbs();
+        }
+
+        dz.addEventListener("click", () => filePicker.click());
+        filePicker.addEventListener("change", e => addFiles(e.target.files));
+        dz.addEventListener("dragover", e => {
+            e.preventDefault();
+            dz.classList.add("dragover");
+        });
+        dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+        dz.addEventListener("drop", e => {
+            e.preventDefault();
+            dz.classList.remove("dragover");
+            addFiles(e.dataTransfer.files);
+        });
+
+        // Sizes
+        const sizesWrap = document.getElementById("sizesWrap");
+        const sizeCustom = document.getElementById("sizeCustom");
+        document.getElementById("btnAddSize").addEventListener("click", () => addCustomSize(sizeCustom.value));
+        sizeCustom.addEventListener("keydown", e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomSize(sizeCustom.value);
+            }
+        });
+
+        function addCustomSize(v) {
+            const val = String(v || '').trim();
+            if (!val) return;
+            const exists = Array.from(sizesWrap.querySelectorAll('.chip input')).some(i => i.value === val);
+            if (exists) {
+                sizeCustom.value = '';
+                return;
+            }
+            const lbl = document.createElement('label');
+            lbl.className = 'chip active';
+            lbl.innerHTML = `<input type="checkbox" value="${val}" checked>${val}<span class="x">&times;</span>`;
+            sizesWrap.appendChild(lbl);
+            lbl.addEventListener("click", (e) => {
+                if (e.target.classList.contains('x')) {
+                    lbl.remove();
+                    return;
+                }
+                lbl.classList.toggle('active');
+                lbl.querySelector('input').checked = lbl.classList.contains('active');
+            });
+            sizeCustom.value = '';
+        }
+
+        sizesWrap.querySelectorAll('.chip').forEach(lbl => {
+            lbl.addEventListener('click', e => {
+                if (e.target.classList.contains('x')) return;
+                lbl.classList.toggle('active');
+                lbl.querySelector('input').checked = lbl.classList.contains('active');
+            });
+        });
+
+        // Thêm mới
+        $('#btnAddProduct').on('click', function () {
+            editingRow = null;
+            form.reset();
+            form.published.value = "true";
+            title.textContent = "Thêm sản phẩm";
+            dzImages = [];
+            renderThumbs();
+            sizesWrap.querySelectorAll('.chip .x')?.forEach(x => x.parentElement.remove());
+            sizesWrap.querySelectorAll('.chip').forEach(ch => {
+                ch.classList.remove('active');
+                ch.querySelector('input').checked = false;
+            });
+            quill.setContents([]);
+            productModal.show();
+        });
+
+        // Hành động dòng (jQuery delegation)
+        $('#tblProducts tbody').on('click', 'button', function () {
+            const $btn = $(this);
+            const $tr = $btn.closest('tr');
+            const row = dt.row($tr);
+            const d = row.data(); // array
+
+            if ($btn.hasClass('btn-outline-secondary')) {
+                // Sửa
+                editingRow = row;
+                title.textContent = "Sửa sản phẩm";
+                form.id.value = (d[0] || '').trim();
+                form.image.value = (/src="([^"]+)"/.exec(String(d[1])) || [])[1] || "";
+                form.name.value = (d[2] || '').trim();
+                form.category.value = (d[3] || '').trim();
+                form.brand.value = (d[4] || '').trim();
+                form.price.value = String(d[5] || "").replace(/[^\d]/g, '');
+                form.stock.value = String(d[6] || "").replace(/[^\d]/g, '');
+                form.published.value = /Hiển/.test(String(d[7])) ? "true" : "false";
+
+                const ex = productExtra.get(form.id.value) || {images: [], sizes: [], descHtml: ""};
+                dzImages = Array.from(ex.images || []);
+                renderThumbs();
+
+                sizesWrap.querySelectorAll('.chip .x')?.forEach(x => x.parentElement.remove());
+                sizesWrap.querySelectorAll('.chip').forEach(ch => {
+                    ch.classList.remove('active');
+                    ch.querySelector('input').checked = false;
+                });
+                (ex.sizes || []).forEach(s => {
+                    const chip = Array.from(sizesWrap.querySelectorAll('.chip input')).find(i => i.value == s);
+                    if (chip) {
+                        chip.checked = true;
+                        chip.parentElement.classList.add('active');
+                    } else addCustomSize(s);
+                });
+
+                quill.root.innerHTML = ex.descHtml || "";
+                productModal.show();
+                return;
+            }
+
+            if ($btn.hasClass('btn-outline-danger')) {
+                // Xoá
+                if (confirm('Xoá sản phẩm này?')) {
+                    const id = d?.[0];
+                    productExtra.delete(id);
+                    row.remove().draw(false);
+                }
+                return;
+            }
+
+            if ($btn.data('act') === 'detail') {
+                // Chi tiết
+                const id = (d[0] || '').trim();
+                const ex = productExtra.get(id) || {};
+                showDetail({
+                    id,
+                    name: (d[2] || '').trim(),
+                    category: (d[3] || '').trim(),
+                    brand: (d[4] || '').trim(),
+                    price: (d[5] || '').trim(),
+                    stock: (d[6] || '').trim(),
+                    published: /Hiển/.test(String(d[7])),
+                    images: ex.images || ((/src="([^"]+)"/.exec(String(d[1])) ? [RegExp.$1] : [])),
+                    sizes: ex.sizes || [],
+                    descHtml: ex.descHtml || ""
+                });
+                return;
+            }
+        });
+
+        // Lưu (tĩnh trong phiên)
+        $('#formProduct').on('submit', function (e) {
+            e.preventDefault();
+            const data = {
+                id: (form.id.value || '').trim(),
+                image: (form.image.value || '').trim(),
+                name: (form.name.value || '').trim(),
+                category: (form.category.value || '').trim(),
+                brand: (form.brand.value || '').trim(),
+                price: Number(form.price.value || 0),
+                stock: Number(form.stock.value || 0),
+                published: form.published.value === "true"
+            };
+            if (!data.id || !data.name) {
+                alert("Vui lòng nhập Mã và Tên sản phẩm");
+                return;
+            }
+
+            const sizes = Array.from(sizesWrap.querySelectorAll('.chip input:checked')).map(i => i.value);
+            const descHtml = quill.root.innerHTML;
+
+            let images = Array.from(dzImages);
+            if (images.length === 0 && data.image) images = [data.image];
+
+            const imgTd = (images[0] || data.image) ? `<img class="thumb" src="${images[0] || data.image}" alt="">` : "";
+            const rowArr = [
+                data.id,
+                imgTd,
+                data.name,
+                data.category,
+                data.brand,
+                moneyVN(data.price),
+                data.stock,
+                badge(data.published),
+                `<div class="text-end">
+        <button class="btn btn-sm btn-outline-info me-1" data-act="detail">Chi tiết</button>
+        <button class="btn btn-sm btn-outline-secondary">Sửa</button>
+        <button class="btn btn-sm btn-outline-danger ms-1">Xoá</button>
+      </div>`
+            ];
+
+            if (editingRow) {
+                const oldId = editingRow.data()?.[0];
+                if (oldId && oldId !== data.id) productExtra.delete(oldId);
+                editingRow.data(rowArr).draw(false);
+            } else {
+                const duplicate = dt.rows().data().toArray().some(r => String(r[0]).trim() === data.id);
+                if (duplicate) {
+                    alert("Mã sản phẩm đã tồn tại!");
+                    return;
+                }
+                dt.row.add(rowArr).draw(false);
+            }
+            productExtra.set(data.id, {images, sizes, descHtml});
+            productModal.hide();
+        });
+
+        // CSV / In / Reset
+        $('#btnCsv').on('click', () => {
+            const rows = dt.rows({search: 'applied'}).data().toArray();
+            const header = ["Mã", "Tên", "Danh mục", "Nhãn hàng", "Giá", "Tồn", "Hiển thị"];
+            const lines = [header.join(",")];
+            rows.forEach(r => {
+                const plain = s => String(s).replace(/<[^>]*>/g, '').replace(/"/g, '""');
+                lines.push([r[0], r[2], r[3], r[4], r[5], r[6], /Hiển/.test(r[7]) ? "1" : "0"].map(v => `"${plain(v)}"`).join(","));
+            });
+            const blob = new Blob([lines.join("\n")], {type: "text/csv;charset=utf-8;"});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'products.csv';
+            a.click();
+        });
+        $('#btnPrint').on('click', () => window.print());
+        $('#btnReset').on('click', () => {
+            if (confirm("Khôi phục lại dữ liệu ban đầu (mất mọi thay đổi trên trang)?")) location.reload();
+        });
+
+        // Offcanvas detail
+        function showDetail(p) {
+            // --- thông tin cơ bản (giữ nguyên) ---
+            $('#offId').text(p.id || '');
+            $('#offName').text(p.name || '');
+            $('#offCat').text(p.category || '');
+            $('#offBrand').text(p.brand || '');
+            $('#offPrice').text(p.price || '');
+            $('#offStock').text(p.stock || '');
+            const $pub = $('#offPub').removeClass('text-bg-success text-bg-secondary');
+            $pub.addClass(p.published ? 'text-bg-success' : 'text-bg-secondary')
+                .text(p.published ? 'Hiển thị' : 'Ẩn');
+            $('#offSizes').html((p.sizes || []).map(s => `<span class="badge rounded-pill text-bg-light me-1 mb-1">${s}</span>`).join('') || '<span class="text-secondary">Chưa thiết lập</span>');
+            $('#offDesc').html(p.descHtml || '<div class="text-secondary">Chưa có mô tả</div>');
+
+            // --- gallery ảnh: Ảnh chính to + thumbnails ---
+            const imgs = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+            const gal = document.getElementById('offGallery');
+
+            if (imgs.length === 0) {
+                gal.innerHTML = '<div class="text-secondary">Chưa có ảnh</div>';
+            } else {
+                const main = imgs[0];
+                const thumbsHtml = imgs.slice(1).map((src, i) =>
+                    `<img src="${src}" class="thumb-img" data-idx="${i + 1}">`
+                ).join('');
+                gal.innerHTML = `
+      <img src="${main}" class="main-img" id="offMainImg">
+      ${imgs.length > 1 ? `<div class="thumbs" id="offThumbs">
+        <img src="${main}" class="thumb-img active" data-idx="0">
+        ${thumbsHtml}
+      </div>` : ''}
+    `;
+
+                // click thumbnail để đổi ảnh chính
+                const offThumbs = gal.querySelector('#offThumbs');
+                if (offThumbs) {
+                    offThumbs.addEventListener('click', (e) => {
+                        const t = e.target.closest('.thumb-img');
+                        if (!t) return;
+                        gal.querySelectorAll('.thumb-img').forEach(x => x.classList.remove('active'));
+                        t.classList.add('active');
+                        const idx = Number(t.dataset.idx) || 0;
+                        gal.querySelector('#offMainImg').src = imgs[idx];
+                    });
+                }
+            }
+
+            // --- mở offcanvas ---
+            new bootstrap.Offcanvas(document.getElementById('offProduct')).show();
+        }
+
+        // expose để handler gọi được
+        window.showDetail = showDetail;
+    })();
+</script>
+</body>
+</html>
