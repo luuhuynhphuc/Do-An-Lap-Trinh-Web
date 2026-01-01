@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <%
@@ -96,121 +97,62 @@
 </header>
 
 
-<!-- NAVBAR -->
+<!-- NAVBAR (ĐỘNG theo DB: categories, brands) -->
 <nav class="navbar navbar-expand-lg navbar-custom navbar-dark">
     <div class="container">
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        <button class="navbar-toggler border-0" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Mở menu">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav w-100 justify-content-around">
-                <!-- Trang chủ -->
+
+                <li class="nav-item"><a class="nav-link" href="${ctx}/home">TRANG CHỦ</a></li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/list-product?gender=men">GIÀY NAM</a></li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/list-product?gender=women">GIÀY NỮ</a></li>
+
+                <!-- THỂ LOẠI -->
                 <li class="nav-item dropdown">
-                    <!--  Trang chủ luôn đi qua HomeController -->
-                    <a class="nav-link dropdown-toggle" href="<%=ctx%>/home">TRANG CHỦ</a>
-                    <ul class="dropdown-menu">
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle"
-                               href="<%= request.getContextPath() %>/list-product">SẢN PHẨM</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Giày nam</a></li>
-                                <li><a class="dropdown-item" href="#">Giày nữ</a></li>
-                                <li><a class="dropdown-item" href="#">Giày trẻ em</a></li>
-                                <li><a class="dropdown-item" href="#">Giày thể thao</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <!-- ADIDAS -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">ADIDAS</a>
-                    <ul class="dropdown-menu">
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle" href="#">Ultraboost</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Ultraboost 22</a></li>
-                                <li><a class="dropdown-item" href="#">Ultraboost 21</a></li>
-                                <li><a class="dropdown-item" href="#">Ultraboost 4.0</a></li>
-                                <li><a class="dropdown-item" href="#">Ultraboost 20</a></li>
-                                <li><a class="dropdown-item" href="#">Ultraboost Light</a></li>
-                            </ul>
-                        </li>
-                        <li><a class="dropdown-item" href="#">ADIDAS 4D</a></li>
-                        <li><a class="dropdown-item" href="#">ALPHABOUNCE</a></li>
-                        <li><a class="dropdown-item" href="#">EQ RUN</a></li>
-                        <li><a class="dropdown-item" href="#">STAN SMITH</a></li>
-                        <li><a class="dropdown-item" href="#">FALCONRUN</a></li>
-                        <li><a class="dropdown-item" href="#">GALAXY | GLX</a></li>
-                        <li><a class="dropdown-item" href="#">SUPER NOVA</a></li>
+                    <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        THỂ LOẠI
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        <c:if test="${empty categoryList}">
+                            <li><span class="dropdown-item text-muted">Chưa có thể loại</span></li>
+                        </c:if>
+                        <c:forEach var="cate" items="${categoryList}">
+                            <li><a class="dropdown-item" href="${ctx}/list-product?categoryId=${cate.id}">${cate.name}</a></li>
+                        </c:forEach>
                     </ul>
                 </li>
 
-                <!-- NIKE -->
+                <!-- THƯƠNG HIỆU -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">NIKE</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">GIÀY NIKE NAM</a></li>
-                        <li><a class="dropdown-item" href="#">GIÀY NIKE NỮ</a></li>
-                        <li><a class="dropdown-item" href="#">Jordan</a></li>
-                        <li><a class="dropdown-item" href="#">Air Force 1</a></li>
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle" href="#">Air Zoom Pegasus</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Pegasus 38</a></li>
-                                <li><a class="dropdown-item" href="#">Pegasus 39</a></li>
-                                <li><a class="dropdown-item" href="#">Pegasus 40</a></li>
-                                <li><a class="dropdown-item" href="#">Pegasus Turbo</a></li>
-                                <li><a class="dropdown-item" href="#">Pegasus 41</a></li>
-                            </ul>
-                        </li>
+                    <a class="nav-link dropdown-toggle" href="#" id="brandDropdown"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        THƯƠNG HIỆU
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="brandDropdown">
+                        <c:if test="${empty brandList}">
+                            <li><span class="dropdown-item text-muted">Chưa có thương hiệu</span></li>
+                        </c:if>
+                        <c:forEach var="brand" items="${brandList}">
+                            <li><a class="dropdown-item" href="${ctx}/list-product?brandId=${brand.id}">${brand.name}</a></li>
+                        </c:forEach>
                     </ul>
                 </li>
 
-                <!-- Hàng khác -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">HÀNG KHÁC</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Lacoste</a></li>
-                        <li><a class="dropdown-item" href="#">Puma</a></li>
-                        <li><a class="dropdown-item" href="#">Reebok</a></li>
-                        <li><a class="dropdown-item" href="#">Mizuno</a></li>
-                        <li><a class="dropdown-item" href="#">Asics</a></li>
-                    </ul>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/list-product?sale=1">KHUYẾN MÃI</a></li>
+                <li class="nav-item"><a class="nav-link" href="${ctx}/contact">LIÊN HỆ</a></li>
 
-
-                <!-- Phụ kiện, quần áo -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">PHỤ KIỆN, QUẦN ÁO</a>
-                    <ul class="dropdown-menu">
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle" href="#">Áo</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Áo Polo</a></li>
-                                <li><a class="dropdown-item" href="#">Áo Phông</a></li>
-                                <li><a class="dropdown-item" href="#">Áo Khoác</a></li>
-                            </ul>
-                        </li>
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle" href="#">Quần thể thao</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Quần Short</a></li>
-                                <li><a class="dropdown-item" href="#">Quần Dài</a></li>
-                            </ul>
-                        </li>
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle" href="#">Kính mắt</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">RAY-BAN</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
             </ul>
         </div>
     </div>
 </nav>
+
 
 <!-- HERO SLIDER -->
 <section class="hero-wrap">
@@ -253,6 +195,7 @@
 </section>
 
 
+
 <!-- ============ SẢN PHẨM MỚI NHẤT (ĐỘNG) ============ -->
 <div class="container py-5">
     <h3 class="text-center fw-bold mb-4 text-uppercase">SẢN PHẨM MỚI NHẤT</h3>
@@ -268,7 +211,6 @@
                         <div class="carousel-item ${st.index == 0 ? 'active' : ''}">
                         <div class="row g-4 justify-content-center">
                     </c:if>
-
                     <!-- CARD SẢN PHẨM -->
                     <div class="col-6 col-md-4 col-lg-3">
                         <div class="product-card h-100">
@@ -724,5 +666,6 @@
     });
 
 </script>
+
 </body>
 </html>

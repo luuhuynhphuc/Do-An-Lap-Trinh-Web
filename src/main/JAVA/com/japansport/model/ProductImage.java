@@ -1,31 +1,16 @@
 package com.japansport.model;
 
 public class ProductImage {
-
     private int id;
     private int productId;
     private String imageUrl;
     private String alt;
-    private boolean mainImage; // true = ảnh chính
-    private int sortOrder;     // thứ tự hiển thị
+    private boolean mainImage;
+    private int sortOrder;
+    private boolean active;
+    private String color;
 
     public ProductImage() {
-    }
-
-    public ProductImage(int id, int productId, String imageUrl) {
-        this.id = id;
-        this.productId = productId;
-        this.imageUrl = imageUrl;
-    }
-
-    public ProductImage(int id, int productId, String imageUrl, String alt,
-                        boolean mainImage, int sortOrder) {
-        this.id = id;
-        this.productId = productId;
-        this.imageUrl = imageUrl;
-        this.alt = alt;
-        this.mainImage = mainImage;
-        this.sortOrder = sortOrder;
     }
 
     public int getId() {
@@ -74,5 +59,21 @@ public class ProductImage {
 
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 }

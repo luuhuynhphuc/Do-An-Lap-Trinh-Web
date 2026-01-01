@@ -1,4 +1,29 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.*" %>
+<%@ page import="com.japansport.model.Cart" %>
+<%@ page import="com.japansport.model.CartItem" %>
+<%
+    String ctx = request.getContextPath();
+
+    Cart cart = (Cart) request.getAttribute("cart");
+    List<CartItem> cartItems = (List<CartItem>) request.getAttribute("cartItems");
+
+    // Fallback để không vỡ nếu controller chưa set "cart"
+    if (cart == null) {
+        if (cartItems == null) cartItems = Collections.emptyList();
+        cart = new Cart(0, 0, "ACTIVE", true, cartItems);
+    } else {
+        cartItems = cart.getItems();
+    }
+
+    double subtotal = cart.getSubtotal();
+    int totalQty = cart.getTotalQty();
+
+    String cartError = (String) session.getAttribute("cartError");
+    session.removeAttribute("cartError");
+%>
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -59,10 +84,10 @@
                     <!--login icon-->
                     <button class="btn header-icon-btn" data-bs-toggle="tooltip" title="Tài khoản"
                             aria-label="Tài khoản">
-                        <a href="login.html"><i class="bi bi-person"></i></a>
+                        <a href="login.jsp"><i class="bi bi-person"></i></a>
                     </button>
                     <!--cart icon-->
-                    <a href="cart.jsp" data-bs-toggle="tooltip" title="Giỏ hàng"
+                    <a href="<%=ctx%>/cart" data-bs-toggle="tooltip" title="Giỏ hàng"
                        class="position-relative header-icon-btn d-flex align-items-center justify-content-center">
                         <i class="bi bi-bag fs-5"></i>
                         <span id="cartCount"
@@ -87,7 +112,7 @@
             <ul class="navbar-nav w-100 justify-content-around">
                 <!-- Trang chủ -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="index.jsp">TRANG CHỦ</a>
+                    <a class="nav-link dropdown-toggle" href="<%=ctx%>/home">TRANG CHỦ</a>
                     <ul class="dropdown-menu">
                         <li class="dropdown-submenu">
                             <a class="dropdown-item dropdown-toggle" href="sanpham.html">SẢN PHẨM</a>
@@ -309,19 +334,79 @@
         </div>
 
         <!-- Cart Table -->
-        <div id="cartRoot"></div>
+        <% if (cartError != null) { %>
+        <div class="alert alert-danger"><%=cartError%></div>
+        <% } %>
+
+        <% if (cartItems.isEmpty()) { %>
+        <div class="alert alert-info">Giỏ hàng đang trống.</div>
+        <% } else { %>
+        <div class="table-responsive bg-white rounded shadow-sm p-3">
+            <table class="table align-middle mb-0">
+                <thead>
+                <tr>
+                    <th style="width:120px">Sản phẩm</th>
+                    <th>Tên</th>
+                    <th style="width:140px">Giá</th>
+                    <th style="width:260px">Số lượng</th>
+                    <th style="width:140px">Thành tiền</th>
+                    <th style="width:70px"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <% for (CartItem it : cartItems) { %>
+                <tr>
+                    <td>
+                        <img src="<%=it.getImageUrl()%>" style="width:90px;height:90px;object-fit:cover;border-radius:10px;">
+                    </td>
+                    <td>
+                        <div class="fw-semibold"><%=it.getProductName()%></div>
+                        <% if (it.getVariantId() != null) { %>
+                        <div class="text-muted small">Màu: <%=it.getColor()%> | Size: <%=it.getSize()%></div>
+                        <% } %>
+                    </td>
+                    <td><%=String.format("%,.0f", it.getUnitPrice())%>₫</td>
+                    <td>
+                        <form class="d-flex gap-2" method="post" action="<%=ctx%>/cart">
+                            <input type="hidden" name="action" value="update"/>
+                            <input type="hidden" name="cartItemId" value="<%=it.getCartItemId()%>"/>
+                            <input type="number" class="form-control" style="max-width:110px"
+                                   name="qty" min="1" value="<%=it.getQuantity()%>"/>
+                            <button class="btn btn-outline-secondary" type="submit">Cập nhật</button>
+                        </form>
+                    </td>
+                    <td><%=String.format("%,.0f", it.getSubtotal())%>₫</td>
+                    <td>
+                        <form method="post" action="<%=ctx%>/cart">
+                            <input type="hidden" name="action" value="remove"/>
+                            <input type="hidden" name="cartItemId" value="<%=it.getCartItemId()%>"/>
+                            <button class="btn btn-outline-danger btn-sm" type="submit">X</button>
+                        </form>
+                    </td>
+                </tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+        <% } %>
+
+
 
         <div class="row mt-4 g-4">
             <div class="col-lg-7">
-                <button class="btn btn-outline-secondary" id="btnClearCart"><i class="bi bi-trash3 me-1"></i> Xoá toàn
-                    bộ giỏ
-                </button>
+                <form method="post" action="<%=ctx%>/cart" class="d-inline">
+                    <input type="hidden" name="action" value="clear"/>
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-trash3 me-1"></i> Xoá toàn bộ giỏ
+                    </button>
+                </form>
+
             </div>
             <div class="col-lg-5">
                 <div class="totals-box">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>Tạm tính</span>
-                        <strong id="subtotal">0₫</strong>
+                        <strong id="subtotal"><%=String.format("%,.0f", subtotal)%>₫</strong>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>Phí vận chuyển</span>
@@ -330,12 +415,12 @@
                     <div class="line my-3"></div>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fs-5">Thành tiền</span>
-                        <strong class="fs-5" id="grandTotal">0₫</strong>
+                        <strong class="fs-5" id="grandTotal"><%=String.format("%,.0f", subtotal)%>₫</strong>
                     </div>
                     <div class="mt-3 d-grid gap-2">
                         <button class="btn btn-danger checkout-btn" id="btnBuyNow">MUA NGAY - GIAO HÀNG THANH TOÁN
                         </button>
-                        <button class="btn btn-primary checkout-btn" id="btnCheckout">MUA NGAY</button>
+                        <a class="btn btn-primary checkout-btn" href="<%=request.getContextPath()%>/checkout">MUA NGAY</a>
                         <button class="btn btn-info checkout-btn text-white" id="btnInstallment">TRẢ GÓP QUA THẺ
                         </button>
                     </div>
@@ -474,176 +559,6 @@
 <!-- Bootstrap JS (bundle đã gồm Popper) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
-<!-- App JS nhỏ -->
-<script>
 
-
-    // ====== CART STORAGE ======
-    const STORAGE_KEY = 'cartItems';
-    const getCart = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const saveCart = (items) => localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-
-    // Currency format VNĐ
-    const fmt = (n) => n.toLocaleString('vi-VN') + '₫';
-
-    function renderCart() {
-        const root = document.getElementById('cartRoot');
-        const cart = getCart();
-        if (cart.length === 0) {
-            root.innerHTML = `
-          <div class="cart-empty">
-            <p>Giỏ hàng đang trống.</p>
-            <a class="btn btn-dark" href="sanpham.html">Bắt đầu mua sắm</a>
-          </div>`;
-            updateTotals();
-            updateCartBadge();
-            return;
-        }
-
-        let html = `
-        <div class="table-responsive">
-          <table class="table align-middle">
-            <thead>
-              <tr>
-                <th style="width:120px">Sản phẩm</th>
-                <th>Tên</th>
-                <th style="width:140px">Giá</th>
-                <th style="width:180px">Số lượng</th>
-                <th style="width:140px">Thành tiền</th>
-                <th style="width:70px"></th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-
-        for (const item of cart) {
-            const line = item.price * item.qty;
-            html += `
-          <tr class="cart-item" data-id="${item.id}">
-            <td><img src="${item.image}" alt="${item.title}"></td>
-            <td>
-              <div class="fw-semibold">${item.title}</div>
-              <small class="text-muted">Mã: ${item.id}</small>
-            </td>
-            <td class="price">${fmt(item.price)}</td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <button class="qty-btn" data-act="dec">-</button>
-                <input class="qty-input" type="number" min="1" value="${item.qty}" />
-                <button class="qty-btn" data-act="inc">+</button>
-              </div>
-            </td>
-            <td class="price">${fmt(line)}</td>
-            <td>
-              <button class="btn btn-sm btn-danger-soft" data-act="remove"><i class="bi bi-x-lg"></i></button>
-            </td>
-          </tr>`;
-        }
-
-        html += `</tbody></table></div>`;
-        root.innerHTML = html;
-
-        // Hook events for each row
-        root.querySelectorAll('tr.cart-item').forEach(row => {
-            const id = row.dataset.id;
-            row.querySelector('[data-act="inc"]').addEventListener('click', () => changeQty(id, +1));
-            row.querySelector('[data-act="dec"]').addEventListener('click', () => changeQty(id, -1));
-            row.querySelector('[data-act="remove"]').addEventListener('click', () => removeItem(id));
-            row.querySelector('.qty-input').addEventListener('change', (e) => setQty(id, +e.target.value || 1));
-        });
-
-        updateTotals();
-    }
-
-    function changeQty(id, delta) {
-        const cart = getCart();
-        const it = cart.find(p => p.id === id);
-        if (!it) return;
-        it.qty = Math.max(1, (it.qty || 1) + delta);
-        saveCart(cart);
-        renderCart();
-        updateCartBadge()
-    }
-
-    function setQty(id, qty) {
-        qty = Math.max(1, qty | 0);
-        const cart = getCart();
-        const it = cart.find(p => p.id === id);
-        if (!it) return;
-        it.qty = qty;
-        saveCart(cart);
-        renderCart();
-        updateCartBadge();
-    }
-
-    function removeItem(id) {
-        let cart = getCart();
-        cart = cart.filter(p => p.id !== id);
-        saveCart(cart);
-        renderCart();
-        updateCartBadge();
-    }
-
-    function updateTotals() {
-        const cart = getCart();
-        const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);
-        const shipping = subtotal > 0 ? 0 : 0; // chỗ này tuỳ chính sách
-        document.getElementById('subtotal').textContent = fmt(subtotal);
-        document.getElementById('shipping').textContent = fmt(shipping);
-        document.getElementById('grandTotal').textContent = fmt(subtotal + shipping);
-    }
-
-    // Clear cart
-    document.getElementById('btnClearCart').addEventListener('click', () => {
-        if (confirm('Xoá toàn bộ giỏ hàng?')) {
-            saveCart([]);
-            renderCart();
-            updateCartBadge();
-        }
-    });
-
-    // Demo actions (tuỳ bạn nối vào hệ thống thanh toán thực)
-    document.getElementById('btnBuyNow')
-        .addEventListener('click', () => location.href = 'payment.html');
-    document.getElementById('btnCheckout').addEventListener('click', () => alert('Đi tới thanh toán tại cửa hàng / giao tận nơi.'));
-    document.getElementById('btnInstallment').addEventListener('click', () => alert('Thanh toán trả góp qua thẻ (demo).'));
-
-    // Render on load
-    renderCart();
-    updateCartBadge()
-
-    // Tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
-
-    // Hiệu ứng focus search
-    document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.querySelector('.search-input');
-        if (searchInput) {
-            searchInput.addEventListener('focus', function () {
-                this.parentElement.style.transform = 'scale(1.02)';
-                this.parentElement.style.transition = 'transform 0.2s ease';
-            });
-            searchInput.addEventListener('blur', function () {
-                this.parentElement.style.transform = 'scale(1)';
-            });
-        }
-    });
-
-    // --- Badge giỏ hàng (an toàn, không đụng code trang khác) ---
-    function updateCartBadge() {
-        const badge = document.getElementById('cartCount');
-        if (!badge) return; // không có thì thôi, tránh throw error
-        const total = (getCart() || []).reduce((s, it) => s + (it.qty || 1), 0);
-        badge.textContent = total;
-        badge.style.display = total > 0 ? 'inline-block' : 'none';
-    }
-
-    // Đồng bộ khi tab khác sửa localStorage
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'cartItems') updateCartBadge();
-    });
-
-</script>
 </body>
 </html>

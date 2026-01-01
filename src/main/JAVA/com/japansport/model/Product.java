@@ -4,92 +4,84 @@ public class Product {
 
     private int id;
     private String name;
+    private String description;   // mô tả chi tiết sản phẩm (có thể null)
     private String image_url;
     private double price;
     private double old_price;
+    private String gender;        // men / women / unisex...
+    private Integer categoryId;   // id danh mục, có thể null
+    private Integer brandId;      // id thương hiệu, có thể null
 
-    private String gender;
-    private Integer categoryId; // id danh mục, có thể null
-
-    private Integer brandId;
+    // Tham chiếu sang Brand (dùng khi JOIN để hiển thị logo, tên brand)
     private Brand brand;
-
 
     public Product() {
     }
 
-
-    public Product(int id, String name, double price, double old_price, String image_url) {
-        this.id = id;
-        this.name = name;
-        this.price = price;
-        this.old_price = old_price;
-        this.image_url = image_url;
-    }
-
-    public int getId() {          //  cho ${p.id}
-
+    // ========== ID ==========
+    public int getId() {
         return id;
     }
 
     public void setId(int id) {
-
         this.id = id;
     }
 
-    public String getName() {     // dùng cho ${p.name}
-
+    // ========== NAME ==========
+    public String getName() {
         return name;
     }
 
     public void setName(String name) {
-
         this.name = name;
     }
 
-    public String getImage_url() { // dùng cho ${p.image_url}
+    // ========== DESCRIPTION ==========
+    public String getDescription() {
+        return description;
+    }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    // ========== IMAGE URL ==========
+    public String getImage_url() {
         return image_url;
     }
 
     public void setImage_url(String image_url) {
-
         this.image_url = image_url;
     }
 
-    public double getPrice() {    // dùng cho ${p.price}
-
+    // ========== PRICE / OLD_PRICE ==========
+    public double getPrice() {
         return price;
     }
 
     public void setPrice(double price) {
-
         this.price = price;
     }
 
     public double getOld_price() {
-
         return old_price;
     }
 
     public void setOld_price(double old_price) {
-
         this.old_price = old_price;
     }
 
-
-    public String getGender() {    // dùng cho lọc/slider Nam/Nữ
-
+    // ========== GENDER ==========
+    public String getGender() {
         return gender;
     }
 
     public void setGender(String gender) {
-
         this.gender = gender;
     }
 
-    public Integer getCategoryId() { // dùng cho lọc theo danh mục
-
+    // ========== CATEGORY ==========
+    public Integer getCategoryId() {
         return categoryId;
     }
 
@@ -97,7 +89,7 @@ public class Product {
         this.categoryId = categoryId;
     }
 
-
+    // ========== BRAND ID ==========
     public Integer getBrandId() {
         return brandId;
     }
@@ -106,6 +98,7 @@ public class Product {
         this.brandId = brandId;
     }
 
+    // ========== BRAND OBJECT ==========
     public Brand getBrand() {
         return brand;
     }
@@ -113,5 +106,4 @@ public class Product {
     public void setBrand(Brand brand) {
         this.brand = brand;
     }
-
 }

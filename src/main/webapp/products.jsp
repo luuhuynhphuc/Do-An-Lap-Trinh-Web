@@ -42,6 +42,17 @@
     if (selectedPricesArr != null) {
         selectedPriceSet.addAll(Arrays.asList(selectedPricesArr));
     }
+    String pageTitle = (String) request.getAttribute("pageTitle");
+    if (pageTitle == null || pageTitle.trim().isEmpty()) pageTitle = "Tất cả sản phẩm";
+
+    String breadcrumbCurrent = (String) request.getAttribute("breadcrumbCurrent");
+    if (breadcrumbCurrent == null || breadcrumbCurrent.trim().isEmpty()) breadcrumbCurrent = pageTitle;
+
+    String selectedGender = (String) request.getAttribute("selectedGender");
+    Boolean showGenderFilterObj = (Boolean) request.getAttribute("showGenderFilter");
+    boolean showGenderFilter = (showGenderFilterObj != null && showGenderFilterObj);
+
+    String saleParam = request.getParameter("sale"); // nếu bạn dùng menu sale
 
     String ctx = request.getContextPath();
 %>
@@ -52,7 +63,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Japan Sport - Tất cả sản phẩm</title>
+    <title>Japan Sport - <%= pageTitle %></title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"/>
@@ -346,14 +357,14 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0 justify-content-center">
                 <li class="breadcrumb-item"><a href="index.jsp">Trang chủ</a></li>
-                <li class="breadcrumb-item active text-danger" aria-current="page">Tất cả sản phẩm</li>
+                <li class="breadcrumb-item active text-danger" aria-current="page"><%= breadcrumbCurrent %></li>
             </ol>
         </nav>
     </div>
 </div>
 
 <div class="container my-4">
-    <h2 class="text-center text-danger fw-bold mb-4">Tất cả sản phẩm</h2>
+    <h2 class="text-center text-danger fw-bold mb-4"><%= pageTitle %></h2>
 
     <div class="row">
         <!-- ===== Sidebar ===== -->
@@ -403,6 +414,44 @@
                 <% if (keywordAttr != null && !keywordAttr.isEmpty()) { %>
                 <input type="hidden" name="keyword" value="<%= keywordAttr %>">
                 <% } %>
+
+
+                <%-- GIỚI TÍNH: chỉ hiện khi vào theo THỂ LOẠI hoặc THƯƠNG HIỆU --%>
+                <% if (showGenderFilter) { %>
+                <div class="widget-box mb-4">
+                    <div class="widget-title">GIỚI TÍNH</div>
+
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="gender" value=""
+                            <%= (selectedGender == null) ? "checked" : "" %>>
+                        <span class="form-check-label">Tất cả</span>
+                    </label>
+
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="gender" value="men"
+                            <%= "men".equalsIgnoreCase(selectedGender) ? "checked" : "" %>>
+                        <span class="form-check-label">Giày nam</span>
+                    </label>
+
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="gender" value="women"
+                            <%= "women".equalsIgnoreCase(selectedGender) ? "checked" : "" %>>
+                        <span class="form-check-label">Giày nữ</span>
+                    </label>
+
+                    <label class="form-check">
+                        <input class="form-check-input" type="radio" name="gender" value="unisex"
+                            <%= "unisex".equalsIgnoreCase(selectedGender) ? "checked" : "" %>>
+                        <span class="form-check-label">Unisex</span>
+                    </label>
+                </div>
+                <% } else { %>
+                <%-- Không hiện block giới tính, nhưng nếu đang có gender thì phải GIỮ lại để không mất filter --%>
+                <% if (selectedGender != null && !selectedGender.isEmpty()) { %>
+                <input type="hidden" name="gender" value="<%= selectedGender %>">
+                <% } %>
+                <% } %>
+
 
                 <!-- THƯƠNG HIỆU  -->
                 <div class="widget-box mb-4">
@@ -486,15 +535,39 @@
         <section class="col-lg-9">
             <!-- sort line -->
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">TẤT CẢ SẢN PHẨM</h4>
-
+                <h4 class="mb-0"><%= pageTitle.toUpperCase() %></h4>
                 <form method="get" action="<%= ctx %>/list-product" class="d-flex align-items-center gap-2">
                     <%-- Giữ lại categoryId nếu đang lọc theo danh mục --%>
                     <% if (selectedCategoryId != null) { %>
                     <input type="hidden" name="categoryId" value="<%= selectedCategoryId %>">
                     <% } %>
 
-                    <label for="sortSelect" class="me-1 fw-semibold" style="white-space: nowrap;">Sắp xếp:</label>
+
+                        <% if (keywordAttr != null && !keywordAttr.isEmpty()) { %>
+                        <input type="hidden" name="keyword" value="<%= keywordAttr %>">
+                        <% } %>
+
+                        <% if (selectedGender != null && !selectedGender.isEmpty()) { %>
+                        <input type="hidden" name="gender" value="<%= selectedGender %>">
+                        <% } %>
+
+                        <% if (saleParam != null && !saleParam.isEmpty()) { %>
+                        <input type="hidden" name="sale" value="<%= saleParam %>">
+                        <% } %>
+
+                        <% if (selectedBrandIdsArr != null) {
+                            for (String bid : selectedBrandIdsArr) { %>
+                        <input type="hidden" name="brandId" value="<%= bid %>">
+                        <%  }
+                        } %>
+
+                        <% if (selectedPricesArr != null) {
+                            for (String pr : selectedPricesArr) { %>
+                        <input type="hidden" name="price" value="<%= pr %>">
+                        <%  }
+                        } %>
+
+                        <label for="sortSelect" class="me-1 fw-semibold" style="white-space: nowrap;">Sắp xếp:</label>
                     <select id="sortSelect" name="sort" class="form-select form-select-sm"
                             onchange="this.form.submit()">
                         <option value=""
@@ -601,6 +674,23 @@
                 if (keywordAttr != null && !keywordAttr.isEmpty()) {
                     baseQuery.append("&keyword=").append(keywordAttr);
                 }
+                                if (selectedGender != null && !selectedGender.isEmpty()) {
+                    baseQuery.append("&gender=").append(selectedGender);
+                }
+                if (saleParam != null && !saleParam.isEmpty()) {
+                    baseQuery.append("&sale=").append(saleParam);
+                }
+                if (selectedBrandIdsArr != null) {
+                    for (String bid : selectedBrandIdsArr) {
+                        baseQuery.append("&brandId=").append(bid);
+                    }
+                }
+                if (selectedPricesArr != null) {
+                    for (String pr : selectedPricesArr) {
+                        baseQuery.append("&price=").append(pr);
+                    }
+                }
+
             %>
                     <% if (totalPages > 1) { %>
                 <nav class="mt-4" aria-label="Pagination">

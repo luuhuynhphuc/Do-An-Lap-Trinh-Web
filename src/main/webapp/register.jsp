@@ -11,7 +11,17 @@
 <%
     String ctx = request.getContextPath();
     String err = (String) request.getAttribute("errorMessage");
+    if (session.getAttribute("CSRF_TOKEN") == null) {
+        java.security.SecureRandom rng = new java.security.SecureRandom();
+        byte[] buf = new byte[32];
+        rng.nextBytes(buf);
+        String token = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
+        session.setAttribute("CSRF_TOKEN", token);
+    }
+
+
 %>
+
 <!doctype html>
 <html lang="vi">
 <head>

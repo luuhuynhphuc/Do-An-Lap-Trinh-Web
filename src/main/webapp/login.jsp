@@ -23,6 +23,13 @@
     String ctx = request.getContextPath();
     String msg = (String) request.getAttribute("msg");      // từ LoginServlet
     String msgType = (String) request.getAttribute("msgType");  // "error" | "success"
+    if (msg == null) {
+        msg = (String) session.getAttribute("FLASH_MSG");
+        msgType = (String) session.getAttribute("FLASH_TYPE");
+        session.removeAttribute("FLASH_MSG");
+        session.removeAttribute("FLASH_TYPE");
+    }
+
     String back = request.getParameter("back");
     String emailParam = request.getParameter("email");
 %>

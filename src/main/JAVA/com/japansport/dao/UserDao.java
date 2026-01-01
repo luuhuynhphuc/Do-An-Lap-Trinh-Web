@@ -6,17 +6,26 @@ import com.japansport.model.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import com.japansport.util.PasswordUtil;
 
 public class UserDao extends DAO implements IDAO<User> {
     @Override
     public List<User> getAll() {
-        try {
-            final Statement statement = getStatement();
-            final ResultSet rs = statement.executeQuery("select * from users");
-            List<User> users = new ArrayList<>();
+        String sql = "SELECT id, email, password, name, active FROM users";
+        List<User> users = new ArrayList<>();
+        try (Connection cn = getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
-                users.add(new User(rs.getInt(1), rs.getString(2), rs.getString(3),
-                        rs.getString(4), rs.getInt(5)));
+                // User ctor: (id, email, name, password, active)
+                users.add(new User(
+                        rs.getInt("id"),
+                        rs.getString("email"),
+                        rs.getString("name"),
+                        rs.getString("password"),
+                        rs.getInt("active")
+                ));
             }
             return users;
         } catch (SQLException e) {
@@ -26,20 +35,25 @@ public class UserDao extends DAO implements IDAO<User> {
 
     @Override
     public User getById(int id) {
-        try {
-            final Statement statement = getStatement();
-            final ResultSet rs = statement.executeQuery(" SELECT * FROM users WHERE id=" + id);
-            if (rs.next()) {
+        String sql = "SELECT id, email, password, name, active FROM users WHERE id=?";
+        try (Connection cn = getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
                 return new User(
-                        rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getInt(5));
+                        rs.getInt("id"),
+                        rs.getString("email"),
+                        rs.getString("name"),
+                        rs.getString("password"),
+                        rs.getInt("active")
+                );
             }
-            return null;
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
+
 
 
     @Override
@@ -53,24 +67,25 @@ public class UserDao extends DAO implements IDAO<User> {
     }
 
     @Override
-
     public int insert(User user) throws SQLException {
-        try {
-            final Statement statement = getStatement();
-            ResultSet rs = statement.executeQuery(" SELECT id FROM users WHERE id= " + user.getId());
-            if (rs.next()) {
-                System.out.println("User already exists" + user.getId());
-                return 0;
+        String sql = "INSERT INTO users (email, password, name, active) VALUES (?, ?, ?, ?)";
+        try (Connection cn = getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, user.getEmail());
+            ps.setString(2, user.getPassword());
+            ps.setString(3, user.getName());
+            ps.setInt(4, user.getActive());
+
+            int affected = ps.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) user.setId(keys.getInt(1));
+                }
             }
-            String sql = String.format("INSERT INTO users (id, email, password, name, active) VALUES (%d,'%s','%s','%s',%d)",
-                    user.getId(), user.getEmail(), user.getPassword(), user.getName(), user.getActive()
-            );
-            return statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return affected;
         }
     }
-
 
     @Override
     public int update(User t) {
@@ -151,40 +166,28 @@ public class UserDao extends DAO implements IDAO<User> {
 
     /* Login */
     public User login(String email, String password) throws SQLException {
-        String sql = "SELECT id, email, password, name, active " +
-                "FROM users WHERE email=? AND active=1";
+        String sql = "SELECT id, email, password, name, active FROM users WHERE email=? AND active=1 LIMIT 1";
 
-        try (Connection cn = DBConnect.getInstance().getConnect();
-             PreparedStatement ps = cn.prepareStatement(
-                     sql,
-                     ResultSet.TYPE_SCROLL_INSENSITIVE,   // <-- cho phép rs.last(), rs.beforeFirst()
-                     ResultSet.CONCUR_READ_ONLY)) {
+        try (Connection cn = getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
 
             ps.setString(1, email);
 
             try (ResultSet rs = ps.executeQuery()) {
-                // ĐẾM SỐ DÒNG
-                if (!rs.last()) return null;       // không có dòng nào
-                int count = rs.getRow();           // số dòng
-                rs.beforeFirst();
+                if (!rs.next()) return null;
 
-                if (count != 1) return null;       // có 0 hoặc >1 user trùng email
-
-                // LẤY DÒNG DUY NHẤT
-                rs.next();
-
-                // LẤY ĐÚNG CỘT PASSWORD (theo tên cột, tránh nhầm index)
                 String dbPass = rs.getString("password");
-                if (!password.equals(dbPass)) return null;
+                if (!PasswordUtil.verify(password, dbPass)) return null;
 
-                // Trả về user (có thể không set password ra ngoài)
-                return new User(
+                // Trả về user, KHÔNG set password ra ngoài
+                User u = new User(
                         rs.getInt("id"),
                         rs.getString("email"),
                         rs.getString("name"),
-                        "",                              // không trả mật khẩu
+                        "", // không trả password
                         rs.getInt("active")
                 );
+                return u;
             }
         }
     }
@@ -193,13 +196,14 @@ public class UserDao extends DAO implements IDAO<User> {
 
     /* Register */
     public boolean existsByEmail(String email) {
-        try {
-            String sql = "SELECT 1 FROM users WHERE email=? LIMIT 1";
-            var ps = DBConnect.getInstance().getConnect().prepareStatement(sql);
+        String sql = "SELECT 1 FROM users WHERE email=? LIMIT 1";
+        try (Connection cn = getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, email);
-            var rs = ps.executeQuery();
-            return rs.next();
-        } catch (java.sql.SQLException e) {
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }

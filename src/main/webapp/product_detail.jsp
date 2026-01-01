@@ -1,13 +1,120 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.japansport.model.Product" %>
 <%@ page import="com.japansport.model.Brand" %>
+<%@ page import="com.japansport.model.ProductVariant" %>
+<%@ page import="com.japansport.dao.ProductVariantDAO" %>
+<%@ page import="java.util.*" %>
+<%@ page import="com.japansport.model.ProductSpec" %>
+<%@ page import="com.japansport.model.ProductImage" %>
+
+
+<%!
+    private static String escapeJs(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    // Escape HTML (để description dạng text không phá layout)
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        String out = s;
+        out = out.replace("&", "&amp;");
+        out = out.replace("<", "&lt;");
+        out = out.replace(">", "&gt;");
+        out = out.replace("\"", "&quot;");
+        out = out.replace("'", "&#39;");
+        return out;
+    }
+
+    /**
+     * Render mô tả sản phẩm:
+     * - Nếu description có vẻ là HTML (có <...>) thì render thẳng
+     * - Nếu là text thường thì escape + xuống dòng thành <br/>
+     */
+    private static String renderProductDesc(String s) {
+        if (s == null) return "";
+        String t = s.trim();
+        if (t.isEmpty()) return "";
+
+        boolean looksLikeHtml = t.contains("<") && t.contains(">"); // không dùng regex/backslash để tránh lỗi JSP
+        if (looksLikeHtml) return t;
+
+        return escapeHtml(t)
+                .replace("\r\n", "<br/>")
+                .replace("\n", "<br/>")
+                .replace("\r", "<br/>");
+    }
+%>
+
 <%
     Product p = (Product) request.getAttribute("product");
-    if (p == null) { response.sendRedirect(request.getContextPath() + "/list-product");
+    if (p == null) {
+        response.sendRedirect(request.getContextPath() + "/list-product");
         return;
     }
     String ctx = request.getContextPath();
+
+    // ===== VARIANTS (color/size) + STOCK =====
+    // Ưu tiên dữ liệu được set từ Servlet: request.setAttribute("variants", List<ProductVariant>)
+    List<ProductVariant> variants = null;
+    try {
+        Object vObj = request.getAttribute("variants");
+        if (vObj instanceof List) {
+            variants = (List<ProductVariant>) vObj;
+        }
+    } catch (Exception ignore) {
+    }
+
+    if (variants == null) {
+        // Fallback: tự query DB (tạm thời cho bạn test nhanh). Prodev: nên query ở Servlet rồi forward.
+        try {
+            ProductVariantDAO variantDAO = new ProductVariantDAO();
+            variants = variantDAO.findByProductId(p.getId());
+        } catch (Exception e) {
+            variants = Collections.emptyList();
+        }
+    }
+    if (variants == null) variants = Collections.emptyList();
+
+    int totalStock = 0;
+    for (ProductVariant v : variants) {
+        totalStock += Math.max(0, v.getStockQty());
+    }
+    List<ProductSpec> specs = (List<ProductSpec>) request.getAttribute("specs");
+    List<ProductImage> allImages = null;
+    try {
+        Object imgObj = request.getAttribute("images");
+        if (imgObj instanceof List) allImages = (List<ProductImage>) imgObj;
+    } catch (Exception ignore) {
+    }
+    if (allImages == null) allImages = Collections.emptyList();
+
+// Ảnh main ban đầu (để trang không trống)
+// (Cách 1: DB lưu link http/https nên src dùng thẳng)
+    ProductImage initMain = null;
+    for (ProductImage im : allImages) {
+        if (im != null && im.isMainImage()) {
+            initMain = im;
+            break;
+        }
+    }
+    if (initMain == null && !allImages.isEmpty()) initMain = allImages.get(0);
+
+    String initMainUrl = (initMain != null && initMain.getImageUrl() != null && !initMain.getImageUrl().isBlank())
+            ? initMain.getImageUrl()
+            : p.getImage_url();
+
+    String initMainAlt = (initMain != null && initMain.getAlt() != null && !initMain.getAlt().isBlank())
+            ? initMain.getAlt()
+            : p.getName();
+
 %>
+
+
 <!DOCTYPE html>
 <html lang="vi" xmlns="http://www.w3.org/1999/html">
 <head>
@@ -66,9 +173,9 @@
                     <button class="btn header-icon-btn" title="Gọi"><i class="bi bi-telephone"></i></button>
                     <button class="btn header-icon-btn" data-bs-toggle="tooltip" title="Tài khoản"
                             aria-label="Tài khoản">
-                        <a href="login.html"><i class="bi bi-person"></i></a>
+                        <a href="<%=ctx%>/login.jsp"><i class="bi bi-person"></i></a>
                     </button>
-                    <a href="cart.html"
+                    <a href="<%=ctx%>/cart"
                        class="position-relative header-icon-btn d-flex align-items-center justify-content-center">
                         <i class="bi bi-bag fs-5"></i>
                         <span id="cartCount"
@@ -342,27 +449,46 @@
                 <!-- Ảnh chính -->
                 <div class="product-gallery">
                     <div class="main-image mb-3">
-                        <img id="mainImage" src="<%= p.getImage_url() %>" alt="<%= p.getName() %>"
-                             alt="Ray-Ban Aviator" class="img-fluid w-100 border rounded">
-                        <!-- khung chứa ảnh phóng to (Zoom box)-->
+                        <img id="mainImage" src="<%= initMainUrl %>" alt="<%= initMainAlt %>"
+                             class="img-fluid w-100 border rounded">
                         <div id="zoomPreview" class="zoom-preview" aria-hidden="true"></div>
                         <div id="zoomLens" class="zoom-lens"></div>
                     </div>
-                    <!-- Thumbnails -->
+
                     <div class="d-flex align-items-center gap-2">
                         <button class="btn btn-sm btn-outline-secondary" onclick="prevThumb()" aria-label="Previous">
                             <i class="bi bi-chevron-left"></i>
                         </button>
 
                         <div class="thumbnails-wrapper flex-grow-1 overflow-hidden">
-                            <div class="thumbnails d-flex gap-2">
-                                <!-- các <img class="thumbnail"> giữ nguyên -->
-                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>" alt="View 1" class="thumbnail active" onclick="changeImage(this)">
-                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>" alt="View 2" class="thumbnail" onclick="changeImage(this)">
-                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>" alt="View 3" class="thumbnail" onclick="changeImage(this)">
-                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>" alt="View 4" class="thumbnail" onclick="changeImage(this)">
-                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>" alt="View 5" class="thumbnail" onclick="changeImage(this)">
-                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>" alt="View 6" class="thumbnail" onclick="changeImage(this)">
+                            <div class="thumbnails d-flex flex-nowrap gap-2">
+                                <%
+                                    int maxThumb = 6;
+                                    int count = 0;
+
+                                    if (allImages != null && !allImages.isEmpty()) {
+                                        for (ProductImage im : allImages) {
+                                            if (im == null || im.getImageUrl() == null || im.getImageUrl().isBlank())
+                                                continue;
+                                            String u = im.getImageUrl();
+                                            String a = (im.getAlt() != null && !im.getAlt().isBlank()) ? im.getAlt() : p.getName();
+                                %>
+                                <img src="<%= u %>" alt="<%= a %>"
+                                     class="thumbnail <%= (count==0 ? "active" : "") %>"
+                                     onclick="changeImage(this)">
+                                <%
+                                            count++;
+                                            if (count >= maxThumb) break;
+                                        }
+                                    }
+
+                                    if (count == 0) {
+                                %>
+                                <img src="<%= p.getImage_url() %>" alt="<%= p.getName() %>"
+                                     class="thumbnail active" onclick="changeImage(this)">
+                                <%
+                                    }
+                                %>
                             </div>
                         </div>
 
@@ -380,14 +506,17 @@
                 <!-- Product Info: 8/12 -->
                 <div class="col-xl-8 col-lg-8 order-2 order-lg-1" data-info-col>
                     <div class="product-info">
-                        <h2 class="h4 mb-3"><%= p.getName() %></h2>
+                        <h2 class="h4 mb-3"><%= p.getName() %>
+                        </h2>
                         <div class="mb-3">
                             <span class="text-muted">Thương hiệu: </span>
                             <a href="#" class="text-primary text-decoration-none">
                                 <%= (p.getBrand() != null) ? p.getBrand().getName() : "" %>
                             </a>
                             <span class="text-muted ms-3">| Kho: </span>
-                            <span class="text-primary">Còn hàng</span>
+                            <span class="text-primary" id="stockText">
+                                <%= (totalStock > 0) ? "Còn hàng" : "Hết hàng" %>
+                            </span>
                         </div>
 
 
@@ -410,8 +539,8 @@
                                 <%= String.format("%,.0f", p.getPrice()) %>đ
                                 <% if (p.getOld_price() > 0) { %>
                                 <span class="text-muted text-decoration-line-through fs-5 ms-2">
-                <%= String.format("%,.0f", p.getOld_price()) %>đ
-            </span>
+                                    <%= String.format("%,.0f", p.getOld_price()) %>đ
+                                    </span>
                                 <% } %>
                             </h3>
                             <div class="alert alert-danger">
@@ -425,26 +554,49 @@
                             <p class="text-primary fw-bold">SĐT liên hệ: 0984843218 0977179889</p>
                         </div>
 
+
+                        <!-- ===== CHỌN MÀU / SIZE + SỐ LƯỢNG (DYNAMIC) ===== -->
+                        <div class="product-variant-box mb-4">
+                            <div class="fw-bold">KÍCH THƯỚC :</div>
+                            <div id="sizeOptions" class="size-selector"></div>
+
+                            <div class="fw-bold mt-3">MÀU SẮC :</div>
+                            <div id="colorOptions" class="color-selector"></div>
+
+                            <div class="fw-bold mt-3">SỐ LƯỢNG :</div>
+                            <div class="quantity-selector">
+                                <div id="variantStockHint" class="variant-stock-hint"></div>
+                                <button class="qty-btn" type="button" id="qtyMinus">-</button>
+                                <input type="number" class="qty-input" id="qtyInput" name="qty" value="1" min="1">
+                                <button class="qty-btn" type="button" id="qtyPlus">+</button>
+                            </div>
+                            <!-- Hidden: variant info để add-to-cart -->
+                            <input type="hidden" id="variantIdHidden" name="variantId" value="">
+                            <%----%>
+                            <form id="addToCartForm" method="post" action="<%=ctx%>/cart" style="display:none;">
+                                <input type="hidden" name="action" value="add">
+                                <input type="hidden" name="productId" value="<%=p.getId()%>">
+                                <input type="hidden" name="variantId" id="formVariantId" value="">
+                                <input type="hidden" name="qty" id="formQty" value="1">
+                                <input type="hidden" name="buyNow" id="formBuyNow" value="0">
+                            </form>
+                            <input type="hidden" id="variantColorHidden" value="">
+                            <input type="hidden" id="variantSizeHidden" value="">
+                            <div class="small text-danger mt-2" id="variantError" style="display:none;"></div>
+                        </div>
+                        <!-- ===== /CHỌN MÀU / SIZE ===== -->
+                        <%--có cần phải tạo trang riêng không--%>
                         <div class="action-buttons mb-100 d-flex justify-content-between">
-                            <button id="btnBuyNowProduct"
-                                    class="btn btn-danger btn-lg me-4 mb-5"
-                                    data-id="<%= String.valueOf(p.getId()) %>"
-                                    data-title="<%= p.getName() %>"
-                                    data-price="<%= (long) p.getPrice() %>"
-                                    data-image="<%= p.getImage_url() %>">
+                            <button type="button"
+                                    id="btnBuyNowProduct"
+                                    class="btn btn-danger btn-lg me-4 mb-5">
                                 MUA NGAY
                                 <small class="d-block">Giao Hàng Thanh Toán COD</small>
                             </button>
 
-
-
-                            <button id="btnAddToCart"
-                                    class="btn btn-lg mb-5 btn-danger add-to-cart"
-                                    data-id="<%= String.valueOf(p.getId()) %>"
-                                    data-title="<%= p.getName() %>"
-                                    data-price="<%= (long) p.getPrice() %>"
-                                    data-image="<%= p.getImage_url() %>"
-                                    data-url="product1.html">
+                            <button type="button"
+                                    id="btnAddToCart"
+                                    class="btn btn-lg mb-5 btn-danger add-to-cart">
                                 Thêm vào giỏ
                             </button>
                         </div>
@@ -526,7 +678,9 @@
             <div class="modal-body pt-0">
                 <div class="row g-3">
                     <div class="col-md-7 d-flex align-items-center">
-                        <img id="mImg" src="" alt="" style="width:90px;height:90px;object-fit:cover;border-radius:10px;border:1px solid #eee" class="me-3">
+                        <img id="mImg" src="" alt=""
+                             style="width:90px;height:90px;object-fit:cover;border-radius:10px;border:1px solid #eee"
+                             class="me-3">
                         <div>
                             <div id="mTitle" class="fw-semibold"></div>
                             <div id="mPrice" class="text-danger fw-bold mt-1"></div>
@@ -586,25 +740,58 @@
                 <div class="tab-content p-4">
                     <!-- MÔ TẢ -->
                     <div class="tab-pane fade show active" id="tab-desc" role="tabpanel">
-                        <h4 class="fw-bold mb-3">Ray-Ban Aviator Reverse RBR0101S-001/82 59mm</h4>
-                        <p>
-                            Ray-Ban đã thể hiện năng lực sáng tạo và sản xuất không giới hạn qua mẫu kính này. Tròng
-                            tròn, gọng kim loại
-                            tinh xảo, kiểu dáng phi công kinh điển. Khoác lên mình màu gọng vàng / nâu, thiết kế nguyên
-                            khung…
-                        </p>
+                        <h4 class="fw-bold mb-3"><%= p.getName() %>
+                        </h4>
 
-                        <h5 class="fw-bold mt-4 mb-3">Thông tin chi tiết</h5>
-                        <ul class="list-unstyled ps-3 mb-0">
-                            <li class="mb-2">• Chất liệu gọng: Kim loại</li>
-                            <li class="mb-2">• Màu gọng: vàng / nâu</li>
-                            <li class="mb-2">• Kiểu gọng: Nguyên khung</li>
-                            <li class="mb-2">• Kiểu dáng: Phi công</li>
-                            <li class="mb-2">• Màu tròng: Xanh lá</li>
-                            <li class="mb-2">• Kiểu tròng: Tròn</li>
-                            <li class="mb-2">• Chất liệu tròng: Nhựa / Polycarbonate</li>
+                        <%
+                            // Mô tả từ DB (products.description)
+                            String desc = (p.getDescription() == null) ? "" : p.getDescription().trim();
+
+                            // Nếu mô tả không phải HTML thì xuống dòng cho đẹp
+                            // (Nếu sau này bạn lưu mô tả dạng HTML từ admin thì nó vẫn hiển thị được bình thường)
+                            boolean looksLikeHtml = desc.contains("<") && desc.contains(">");
+
+                            if (!looksLikeHtml) {
+                                // Escape HTML cơ bản để tránh lỗi hiển thị khi mô tả có ký tự đặc biệt
+                                desc = desc.replace("&", "&amp;")
+                                        .replace("<", "&lt;")
+                                        .replace(">", "&gt;")
+                                        .replace("\"", "&quot;")
+                                        .replace("'", "&#39;");
+
+                                // Convert newline -> <br>
+                                desc = desc.replace("\r\n", "<br>")
+                                        .replace("\n", "<br>")
+                                        .replace("\r", "<br>");
+                            }
+                        %>
+
+                        <div class="mb-0">
+                            <%= desc.isEmpty() ? "Đang cập nhật mô tả sản phẩm." : desc %>
+                        </div>
+                        <%
+                            if (specs != null && !specs.isEmpty()) {
+                        %>
+                        <hr class="my-4"/>
+                        <h5 class="fw-bold mb-3">Chi tiết sản phẩm</h5>
+                        <ul class="mb-0">
+                            <%
+                                for (ProductSpec s : specs) {
+                                    String k = s.getSpecKey() == null ? "" : escapeHtml(s.getSpecKey());
+                                    String v = s.getSpecValue() == null ? "" : escapeHtml(s.getSpecValue());
+                            %>
+                            <li><strong><%= k %>
+                            </strong>: <%= v %>
+                            </li>
+                            <%
+                                }
+                            %>
                         </ul>
+                        <%
+                            }
+                        %>
                     </div>
+
 
                     <!-- TÙY CHỈNH -->
                     <div class="tab-pane fade" id="tab-custom" role="tabpanel">
@@ -614,57 +801,158 @@
 
                     <!-- ĐÁNH GIÁ -->
                     <div class="tab-pane fade" id="tab-review" role="tabpanel">
-                        <p class="mb-2">Chưa có đánh giá. Hãy là người đầu tiên!</p>
-                        <!-- Nút mở box đánh giá (trong tab "Đánh giá") -->
-                        <button id="openReviewBtn" class="btn btn-danger">Viết đánh giá</button>
+                        <%
+                            // Check login (an toàn – không phụ thuộc class User cụ thể)
+                            Object u = session.getAttribute("user");
+                            if (u == null) u = session.getAttribute("account");
+                            if (u == null) u = session.getAttribute("acc");
+                            boolean loggedIn = (u != null);
+                        %>
 
-                        <!-- ===== Modal Viết đánh giá ===== -->
-                        <div id="reviewModal" class="review-modal" aria-hidden="true" role="dialog" aria-modal="true">
-                            <div class="review-overlay" data-close></div>
+                        <div id="reviewSection" class="review-wrap my-4"
+                             data-product-id="<%= p.getId() %>"
+                             data-api="<%= request.getContextPath() %>/api/reviews"
+                             data-submit-api="<%= request.getContextPath() %>/api/reviews/add"
+                             data-logged-in="<%= (session.getAttribute("user") != null) ? "1" : "0" %>">
+                            <!-- 1) Tổng quan đánh giá -->
+                            <div class="row g-4 align-items-stretch">
+                                <div class="col-lg-4">
+                                    <div class="border rounded-3 p-3 h-100 bg-light">
+                                        <div class="d-flex align-items-end gap-2">
+                                            <div class="display-6 fw-bold mb-0" id="rvAvg">0.0</div>
+                                            <div class="text-muted mb-2">/5</div>
+                                        </div>
 
-                            <div class="review-card" role="document" aria-labelledby="reviewTitle">
-                                <button class="review-close" type="button" aria-label="Đóng" title="Đóng" data-close>
-                                    &times;
-                                </button>
-                                <h5 id="reviewTitle" class="mb-3 text-center fw-bold">Đánh giá sản phẩm</h5>
-
-                                <!-- Sao đánh giá -->
-                                <div class="review-stars text-center mb-3" aria-label="Chọn số sao">
-                                    <i class="star bi bi-star-fill" data-value="1"></i>
-                                    <i class="star bi bi-star-fill" data-value="2"></i>
-                                    <i class="star bi bi-star-fill" data-value="3"></i>
-                                    <i class="star bi bi-star-fill" data-value="4"></i>
-                                    <i class="star bi bi-star-fill" data-value="5"></i>
+                                        <div class="text-warning fs-5 mt-1" id="rvAvgStars"></div>
+                                        <div class="text-muted small mt-1" id="rvCountText">0 đánh giá</div>
+                                    </div>
                                 </div>
 
-                                <!-- Form -->
-                                <form id="reviewForm" class="review-form">
-                                    <input type="hidden" name="rating" id="ratingValue" value="5"/>
+                                <div class="col-lg-8">
+                                    <div class="border rounded-3 p-3 h-100">
+                                        <div class="vstack gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="text-nowrap" style="width:48px;">5<i
+                                                        class="bi bi-star-fill text-warning ms-1"></i></div>
+                                                <div class="progress flex-grow-1" style="height:10px;">
+                                                    <div class="progress-bar bg-warning" id="rvBar5"
+                                                         style="width:0%"></div>
+                                                </div>
+                                                <div class="text-end" style="width:42px;" id="rvCnt5">0</div>
+                                            </div>
 
-                                    <div class="mb-2">
-                                        <input type="text" class="form-control" placeholder="Nhập tên của bạn" required>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="text-nowrap" style="width:48px;">4<i
+                                                        class="bi bi-star-fill text-warning ms-1"></i></div>
+                                                <div class="progress flex-grow-1" style="height:10px;">
+                                                    <div class="progress-bar bg-warning" id="rvBar4"
+                                                         style="width:0%"></div>
+                                                </div>
+                                                <div class="text-end" style="width:42px;" id="rvCnt4">0</div>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="text-nowrap" style="width:48px;">3<i
+                                                        class="bi bi-star-fill text-warning ms-1"></i></div>
+                                                <div class="progress flex-grow-1" style="height:10px;">
+                                                    <div class="progress-bar bg-warning" id="rvBar3"
+                                                         style="width:0%"></div>
+                                                </div>
+                                                <div class="text-end" style="width:42px;" id="rvCnt3">0</div>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="text-nowrap" style="width:48px;">2<i
+                                                        class="bi bi-star-fill text-warning ms-1"></i></div>
+                                                <div class="progress flex-grow-1" style="height:10px;">
+                                                    <div class="progress-bar bg-warning" id="rvBar2"
+                                                         style="width:0%"></div>
+                                                </div>
+                                                <div class="text-end" style="width:42px;" id="rvCnt2">0</div>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="text-nowrap" style="width:48px;">1<i
+                                                        class="bi bi-star-fill text-warning ms-1"></i></div>
+                                                <div class="progress flex-grow-1" style="height:10px;">
+                                                    <div class="progress-bar bg-warning" id="rvBar1"
+                                                         style="width:0%"></div>
+                                                </div>
+                                                <div class="text-end" style="width:42px;" id="rvCnt1">0</div>
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div class="mb-2">
-                                        <input type="email" class="form-control" placeholder="nguyenvan@gmail.com"
-                                               required>
-                                    </div>
+                            <!-- 2) Filters + sort -->
+                            <div class="d-flex flex-wrap align-items-center gap-2 mt-4">
+                                <div class="btn-group" role="group" id="rvFilters">
+                                    <button type="button" class="btn btn-outline-secondary active" data-rating="0">Tất
+                                        cả
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" data-rating="5">5<i
+                                            class="bi bi-star-fill text-warning ms-1"></i></button>
+                                    <button type="button" class="btn btn-outline-secondary" data-rating="4">4<i
+                                            class="bi bi-star-fill text-warning ms-1"></i></button>
+                                    <button type="button" class="btn btn-outline-secondary" data-rating="3">3<i
+                                            class="bi bi-star-fill text-warning ms-1"></i></button>
+                                    <button type="button" class="btn btn-outline-secondary" data-rating="2">2<i
+                                            class="bi bi-star-fill text-warning ms-1"></i></button>
+                                    <button type="button" class="btn btn-outline-secondary" data-rating="1">1<i
+                                            class="bi bi-star-fill text-warning ms-1"></i></button>
+                                </div>
 
-                                    <div class="mb-2">
-                                        <input type="text" class="form-control" placeholder="Tiêu đề">
+                                <select class="form-select w-auto ms-lg-auto" id="rvSort">
+                                    <option value="newest" selected>Mới nhất</option>
+                                    <option value="highest">Cao nhất</option>
+                                    <option value="lowest">Thấp nhất</option>
+                                </select>
+                            </div>
+
+                            <!-- 3) Review list -->
+                            <div class="mt-3" id="rvList">
+                                <div class="text-muted">Đang tải đánh giá...</div>
+                            </div>
+
+                            <nav class="mt-3">
+                                <ul class="pagination pagination-sm mb-0" id="rvPager"></ul>
+                            </nav>
+
+                            <!-- 4) Write review -->
+                            <hr class="my-4"/>
+                            <div id="rvWriteBox">
+                                <div id="rvWriteNotice" class="mb-2"></div>
+
+                                <form id="rvForm" class="border rounded-3 p-3 d-none">
+                                    <input type="hidden" name="productId" value="<%= p.getId() %>"/>
+                                    <input type="hidden" name="rating" id="rvRatingInput" value="5"/>
+
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <div class="fw-bold">Đánh giá của bạn:</div>
+                                        <div class="text-warning fs-5" id="rvPickStars" style="cursor:pointer;">
+                                            <i class="bi bi-star-fill" data-value="1"></i>
+                                            <i class="bi bi-star-fill" data-value="2"></i>
+                                            <i class="bi bi-star-fill" data-value="3"></i>
+                                            <i class="bi bi-star-fill" data-value="4"></i>
+                                            <i class="bi bi-star-fill" data-value="5"></i>
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <textarea class="form-control" rows="4" placeholder="Nội dung"></textarea>
+                                        <textarea class="form-control" name="comment" rows="4"
+                                                  placeholder="Tối thiểu 5 ký tự..." required></textarea>
                                     </div>
 
-                                    <div class="text-center">
-                                        <button type="submit" class="btn btn-danger px-4">Gửi</button>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="submit" class="btn btn-danger">Gửi đánh giá</button>
+                                        <div class="small text-muted">Demo front-end (sau này nối DB sẽ lưu thật).</div>
                                     </div>
+
+                                    <div class="mt-2" id="rvFormMsg"></div>
                                 </form>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -768,11 +1056,16 @@
             <div class="col-lg-3 col-md-6">
                 <h5 class="text-uppercase mb-3">CHÍNH SÁCH</h5>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><a href="news.html" class="text-light text-decoration-none">THÔNG TIN ĐIỆN TỬ</a></li>
-                    <li class="mb-2"><a href="shipping_policy.html" class="text-light text-decoration-none">Chính sách vận chuyển</a></li>
-                    <li class="mb-2"><a href="return_policy.html" class="text-light text-decoration-none">Chính sách đổi trả</a></li>
-                    <li class="mb-2"><a href="ordering_instructions.html" class="text-light text-decoration-none">Hướng dẫn đặt hàng</a></li>
-                    <li class="mb-2"><a href="payment_in4.html" class="text-light text-decoration-none">Thông tin thanh toán</a></li>
+                    <li class="mb-2"><a href="news.html" class="text-light text-decoration-none">THÔNG TIN ĐIỆN TỬ</a>
+                    </li>
+                    <li class="mb-2"><a href="shipping_policy.html" class="text-light text-decoration-none">Chính sách
+                        vận chuyển</a></li>
+                    <li class="mb-2"><a href="return_policy.html" class="text-light text-decoration-none">Chính sách đổi
+                        trả</a></li>
+                    <li class="mb-2"><a href="ordering_instructions.html" class="text-light text-decoration-none">Hướng
+                        dẫn đặt hàng</a></li>
+                    <li class="mb-2"><a href="payment_in4.html" class="text-light text-decoration-none">Thông tin thanh
+                        toán</a></li>
                     <li class="mb-2"><a href="#" class="text-light text-decoration-none">Thông tin về JAPANBABY</a></li>
                 </ul>
             </div>
@@ -811,383 +1104,542 @@
 <!-- Bootstrap JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
-<script
->
-    /* =========================================================================
-       TIỆN ÍCH DOM
-       ========================================================================= */
-    const qs  = (sel, root=document) => root.querySelector(sel);
-    const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-
-    /* =========================================================================
-       CART CORE (LocalStorage: 'cartItems')
-       ========================================================================= */
-    const STORAGE_KEY = 'cartItems';
-    const getCart  = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const saveCart = (items) => localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    const fmtVND   = n => (n||0).toLocaleString('vi-VN') + '₫';
-
-    function addToCart(item){
-        const cart = getCart();
-        const found = cart.find(p => p.id === item.id);
-        if (found) found.qty = (found.qty || 1) + (item.qty || 1);
-        else cart.push({ ...item, qty: item.qty || 1 });
-        saveCart(cart);
-        updateCartCount();
-    }
-
-    function updateCartCount(){
-        const total = getCart().reduce((s, it) => s + (it.qty || 1), 0);
-        const badge = qs('#cartCount');
-        if (badge){
-            badge.textContent = total;
-            badge.style.display = total > 0 ? 'inline-block' : 'none';
-        }
-    }
-
-    /* =========================================================================
-       GALLERY + THUMBNAILS (4 ảnh hiển thị, trượt từng ảnh)
-         2 nút prev/next gọi prevThumb() / nextThumb()
-       ========================================================================= */
-    (function(){
-        const gallery   = qs('.product-gallery');
-        if(!gallery) return;
-
-        const mainImg   = qs('#mainImage', gallery);
-        const mainBox   = qs('.main-image', gallery);
-        const viewport  = qs('.thumbnails-wrapper', gallery);
-        const rail      = qs('.thumbnails', gallery);
-        const thumbs    = () => qsa('.thumbnail', rail);
-
-        let cursor = 0;                         // index ảnh đầu đang hiển thị
-        const VISIBLE = 4;                      // số thumbnail hiển thị đồng thời
-        const SAFETY  = 4;                      // biên an toàn px
-        const MIN     = 56, MAX = 112;          // kích thước thumbnail
-        let GAP = 8;                            // đọc từ CSS
-        let size = 80;                          // cạnh vuông của mỗi thumbnail
-        let currentImageIndex = 0;
-
-        function readGap(){
-            const cs = getComputedStyle(rail);
-            const g  = parseFloat(cs.gap || cs.columnGap || '8');
-            return isNaN(g) ? 8 : g;
-        }
-        const clamp = (v,a,b)=>Math.min(b, Math.max(a, v));
-        const maxCursor = ()=> Math.max(0, thumbs().length - VISIBLE);
-
-        function compute(){
-            if(!mainBox || !viewport || !rail) return;
-            GAP = readGap();
-            const totalW = Math.floor(mainBox.clientWidth);
-            viewport.style.width = totalW + 'px';
-
-            size = Math.floor((totalW - SAFETY - (VISIBLE - 1) * GAP) / VISIBLE);
-            size = clamp(size, MIN, MAX);
-
-            thumbs().forEach(t => {
-                t.style.width  = size + 'px';
-                t.style.height = size + 'px';
-            });
-
-            cursor = clamp(cursor, 0, maxCursor());
-            apply();
-        }
-
-        function apply(){
-            const step = size + GAP;
-            const dx   = Math.round(cursor * step);
-            rail.style.transform = `translateX(${-dx}px)`;
-        }
-
-        // Public cho nút HTML
-        window.nextThumb = function(){
-            if(cursor < maxCursor()){ cursor += 1; apply(); }
-        };
-        window.prevThumb = function(){
-            if(cursor > 0){ cursor -= 1; apply(); }
-        };
-
-        // Đổi ảnh chính
-        window.changeImage = function(thumbnail){
-            if(!thumbnail) return;
-            mainImg.src = thumbnail.src;
-            thumbs().forEach(t => t.classList.remove('active'));
-            thumbnail.classList.add('active');
-            currentImageIndex = thumbs().indexOf(thumbnail);
-
-            // Cập nhật nền preview nếu đang mở zoom
-            if (qs('#zoomPreview').style.display === 'block') {
-                qs('#zoomPreview').style.backgroundImage = `url(${mainImg.src})`;
-                syncPreviewBox();
-            }
-        };
-
-        // Auto đưa ảnh vừa click vào trong khung nhìn nếu nằm ngoài
-        rail.addEventListener('click', (e) => {
-            const t = e.target.closest('.thumbnail'); if(!t) return;
-            const i = thumbs().indexOf(t);
-            if (i < cursor) { cursor = i; apply(); }
-            else if (i > cursor + VISIBLE - 1) { cursor = i - (VISIBLE - 1); apply(); }
-        });
-
-        window.addEventListener('resize', compute);
-        document.addEventListener('DOMContentLoaded', compute);
-
-        // =========================
-        // [CÁCH 1] Chỉ lắng nghe click bên trong .product-gallery
-        // Mục tiêu: Khi bấm MUA NGAY (nằm ngoài gallery), KHÔNG mở lightbox/preview ảnh.
-        // =========================
-        (function(){
-            const gallery  = document.querySelector('.product-gallery');
-            if (!gallery) return; // Không có gallery thì thôi
-
-            // LẮNG NGHE CLICK CHỈ TRONG PHẠM VI GALLERY
-            gallery.addEventListener('click', function (e) {
-                // Chỉ xử lý khi click vào ẢNH CHÍNH (#mainImage) hoặc THUMBNAIL (.thumbnail)
-                const clickedMain  = e.target.closest('#mainImage');   // ảnh lớn
-                const clickedThumb = e.target.closest('.thumbnail');   // ảnh nhỏ
-
-                // Nếu không click đúng 2 vùng trên => bỏ qua (KHÔNG mở preview)
-                if (!clickedMain && !clickedThumb) return;
-
-                // --- PHẦN SAU TÙY THEO CÁCH BẠN ĐANG MỞ PREVIEW ---
-                // 1) Nếu click thumbnail: vẫn dùng hàm cũ để đổi ảnh (đang có sẵn trong HTML: changeImage(this))
-                if (clickedThumb) {
-                    // Gọi lại logic đổi ảnh chính như cũ
-                    // (nếu trước đây dùng inline onclick="changeImage(this)", đoạn này là bổ sung an toàn)
-                    if (typeof changeImage === 'function') changeImage(clickedThumb);
-                    return;
-                }
-
-                // 2) Nếu click ảnh chính: gọi hàm mở preview/lightbox của bạn
-                //   - Hãy thay tên hàm bên dưới bằng hàm bạn đang dùng để mở popup ảnh
-                //   - Ví dụ: openLightbox() hoặc openImagePreview()...
-                if (clickedMain) {
-                    if (typeof openLightbox === 'function') {
-                        openLightbox();             // <-- đổi tên nếu hàm bạn khác
-                    } else if (typeof openImagePreview === 'function') {
-                        openImagePreview();         // <-- đổi tên nếu hàm bạn khác
-                    } else {
-                        // Nếu bạn chỉ dùng zoom/khung #zoomPreview/#zoomLens thì ở đây có thể
-                        // bật/tắt khung zoom theo đúng logic hiện tại của bạn
-                        // Ví dụ (placeholder):
-                        // document.getElementById('zoomPreview')?.classList.add('is-open');
-                    }
-                }
-            });
-        })(); // <--- Dán code này TRƯỚC dòng kết thúc IIFE của phần gallery
-
-
-    })();
-
-
-    /* =========================================================================
-    ZOOM PREVIEW – đặt cạnh ảnh chính; khi hiện zoom, đẩy info xuống dưới
-    ========================================================================= */
-    // lấy sẵn
-    const infoCol  = document.querySelector('[data-info-col]');
-    const img      = document.getElementById('mainImage');
-    const lens     = document.getElementById('zoomLens');
-    const preview  = document.getElementById('zoomPreview');
-    const SCALE    = 2.2;
-    const LENS_W   = 140, LENS_H = 140;
-
-    // Đồng bộ kích thước preview theo ảnh chính
-    function syncPreviewBox(){
-        preview.style.width  = img.clientWidth + 'px';
-        preview.style.height = img.clientHeight + 'px';
-    }
-
-    // Mở zoom
-    function showZoom(){
-        if (window.innerWidth < 1200) return;
-        syncPreviewBox();
-        preview.style.display = 'block';
-        lens.style.display    = 'block';
-        preview.style.backgroundImage = `url(${img.src})`;
-        preview.style.backgroundSize  = (SCALE*100) + '% auto';
-        // chặn hover/click chữ phía dưới (an toàn)
-        if (infoCol) infoCol.style.pointerEvents = 'none';
-    }
-
-    // Tắt zoom
-    function hideZoom(){
-        preview.style.display = 'none';
-        lens.style.display    = 'none';
-        if (infoCol) infoCol.style.pointerEvents = '';
-    }
-
-    // Di chuyển lens + position ảnh phóng
-    function moveLens(e){
-        const r = img.getBoundingClientRect();
-        let x = e.clientX - r.left - LENS_W/2;
-        let y = e.clientY - r.top  - LENS_H/2;
-        x = Math.max(0, Math.min(x, r.width  - LENS_W));
-        y = Math.max(0, Math.min(y, r.height - LENS_H));
-
-        lens.style.left = x + 'px';
-        lens.style.top  = y + 'px';
-
-        const maxX = r.width  - LENS_W;
-        const maxY = r.height - LENS_H;
-        const px = (x / maxX) * 100;
-        const py = (y / maxY) * 100;
-        preview.style.backgroundPosition = `${px}% ${py}%`;
-    }
-
-    // Gán sự kiện (nếu bạn đã có rồi thì giữ 1 bản)
-    img.addEventListener('mouseenter', showZoom);
-    img.addEventListener('mouseleave', hideZoom);
-    img.addEventListener('mousemove',  moveLens);
-
-    // Khi đổi thumbnail mà đang zoom, đồng bộ lại
-    document.querySelectorAll('.thumbnail').forEach(t=>{
-        t.addEventListener('click', ()=>{
-            if (preview.style.display === 'block'){
-                setTimeout(()=>{
-                    syncPreviewBox();
-                    preview.style.backgroundImage = `url(${img.src})`;
-                },0);
-            }
-        });
-    });
-
-    // Responsive: đang zoom thì update khung
-    window.addEventListener('resize', ()=>{
-        if (preview.style.display === 'block') syncPreviewBox();
-    });
-
-
-
-    /* =========================================================================
-           REVIEW MODAL (custom, không dùng Bootstrap Modal)
-           ========================================================================= */
-    (function(){
-        const openBtn = qs('#openReviewBtn');
-        const modal   = qs('#reviewModal');
-        if(!modal) return;
-        const overlay = qs('.review-overlay', modal);
-        const closers = qsa('[data-close]', modal);
-        const stars   = qsa('.review-stars .star', modal);
-        const ratingEl = qs('#ratingValue', modal);
-        let lastFocus;
-
-        function paintStars(value){
-            stars.forEach(st => {
-                const v = +st.getAttribute('data-value');
-                st.classList.toggle('active', v <= value);
-            });
-        }
-        function openModal(){
-            lastFocus = document.activeElement;
-            modal.classList.add('show');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeModal(){
-            modal.classList.remove('show');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-            if(lastFocus?.focus) lastFocus.focus();
-        }
-
-        openBtn?.addEventListener('click', openModal);
-        overlay?.addEventListener('click', closeModal);
-        closers.forEach(btn => btn.addEventListener('click', closeModal));
-        document.addEventListener('keydown', e => {
-            if(e.key === 'Escape' && modal.classList.contains('show')) closeModal();
-        });
-
-        // mặc định 5 sao
-        paintStars(+ratingEl?.value || 5);
-        stars.forEach(st => st.addEventListener('click', ()=>{
-            const v = +st.getAttribute('data-value');
-            if(ratingEl) ratingEl.value = v;
-            paintStars(v);
-        }));
-
-        qs('#reviewForm')?.addEventListener('submit', e => {
-            e.preventDefault();
-            closeModal();
-            alert('Cảm ơn bạn đã gửi đánh giá!');
-        });
-    })();
-
-    /* =========================================================================
-       NÚT "THÊM VÀO GIỎ" & "MUA NGAY" (mua ngay → modal xác nhận → payment.html)
-       ========================================================================= */
-    (function(){
-        // Cập nhật badge khi vào trang
-        document.addEventListener('DOMContentLoaded', updateCartCount);
-
-        // Thêm vào giỏ
-        const addBtn = qs('#btnAddToCart');
-        if(addBtn){
-            addBtn.addEventListener('click', () => {
-                const item = {
-                    id:    addBtn.dataset.id,
-                    title: addBtn.dataset.title,
-                    price: Number(addBtn.dataset.price || 0),
-                    image: addBtn.dataset.image || '',
-                    qty:   1
-                };
-                addToCart(item);
-                alert('Đã thêm sản phẩm vào giỏ!');
-            });
-        }
-
-
-        // Mua ngay (thêm vào giỏ + bật modal)
-        const buyBtn = qs('#btnBuyNowProduct');
-        const addedModalEl = qs('#addedModal');
-        if (buyBtn && addedModalEl) {
-            buyBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Tắt zoom nếu đang mở
-                try { hideZoom(); } catch(err) {}
-
-                const item = {
-                    id:    buyBtn.dataset.id,
-                    title: buyBtn.dataset.title,
-                    price: Number(buyBtn.dataset.price || 0),
-                    image: buyBtn.dataset.image || '',
-                    qty:   1
-                };
-                addToCart(item);
-                fillAndShowAddedModal(item);
-            });
-
-            function fillAndShowAddedModal(item){
-                qs('#mImg').src = item.image || '';
-                qs('#mImg').alt = item.title || '';
-                qs('#mTitle').textContent = item.title || '';
-                qs('#mPrice').textContent = fmtVND(item.price || 0);
-                qs('#mTotal').textContent = fmtVND((item.price||0) * (item.qty||1));
-
-                const bsModal = new bootstrap.Modal(addedModalEl, { backdrop: 'static' });
-                bsModal.show();
-            }
-        }
-        // Khi bấm "TIẾN HÀNH ĐẶT HÀNG" → sang payment.html
-        const proceedBtn = qs('#mProceed');
-        if (proceedBtn) {
-            proceedBtn.addEventListener('click', () => {
-                window.location.href = 'payment.html';
-            });
-        }
-
-    })();
-
-    /* =========================================================================
-       BOOTSTRAP TOOLTIPS
-       ========================================================================= */
-    (function(){
-        const list = qsa('[data-bs-toggle="tooltip"]');
-        list.forEach(el => new bootstrap.Tooltip(el));
-    })();
+<script>
+    // ===== VARIANTS DATA FROM SERVER =====
+    // [{id, color, size, stock}]
+    const VARIANTS = [
+        <% for (int i = 0; i < variants.size(); i++) {
+            ProductVariant v = variants.get(i);
+            // Escape để nhúng an toàn vào chuỗi JavaScript
+            String c = escapeJs(v.getColor());
+            String s = escapeJs(v.getSize());
+        %>
+        {
+            id: <%= v.getId() %>,
+            color: "<%= c %>",
+            size: "<%= s %>",
+            stock: <%= v.getStockQty() %>
+        }<%= (i < variants.size()-1) ? "," : "" %>
+        <% } %>
+    ];
 </script>
+
+<script>
+    // ===== PRODUCT IMAGES FROM DB (URL http/https) =====
+    const PRODUCT_IMAGES = [
+        <% for (int i = 0; i < allImages.size(); i++) {
+            ProductImage im = allImages.get(i);
+            if (im == null) continue;
+            String raw = im.getImageUrl();
+            if (raw == null || raw.isBlank()) continue;
+
+            String url = escapeJs(raw);
+            String alt = escapeJs((im.getAlt() != null && !im.getAlt().isBlank()) ? im.getAlt() : p.getName());
+            String color = escapeJs(im.getColor() != null ? im.getColor() : "");
+        %>
+        {
+            url: "<%= url %>",
+            alt: "<%= alt %>",
+            color: "<%= color %>",
+            isMain:<%= im.isMainImage() ? "true" : "false" %>,
+            sort:<%= im.getSortOrder() %>
+        }<%= (i < allImages.size()-1) ? "," : "" %>
+        <% } %>
+    ];
+
+    function _normColor(s) {
+        let x = String(s || '').trim().toLowerCase();
+        if (!x) return '';
+
+        // nếu DB lưu dạng mã màu
+        if (x[0] === '#') {
+            const h = x.slice(1);
+            if (h === 'fff' || h === 'ffffff') return 'white';
+            if (h === '000' || h === '000000') return 'black';
+            return x;
+        }
+
+        // bỏ dấu tiếng Việt
+        x = x.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        x = x.replace(/\s+/g, ' ').trim();
+
+        // map VN <-> EN
+        const map = {
+            'trang': 'white', 'white': 'white',
+            'den': 'black', 'black': 'black',
+            'xanh': 'blue', 'xanh duong': 'blue', 'blue': 'blue',
+            'do': 'red', 'red': 'red',
+            'xanh la': 'green', 'green': 'green',
+            'xam': 'gray', 'grey': 'gray', 'gray': 'gray',
+            'vang': 'yellow', 'yellow': 'yellow',
+            'cam': 'orange', 'orange': 'orange',
+            'hong': 'pink', 'pink': 'pink',
+            'nau': 'brown', 'brown': 'brown'
+        };
+
+        return map[x] || x;
+    }
+
+
+    function _pickImagesByColor(colorName) {
+        const target = _normColor(colorName);
+        let list = [];
+
+        if (target) list = PRODUCT_IMAGES.filter(x => _normColor(x.color) === target);
+        if (!list.length) list = PRODUCT_IMAGES.filter(x => !_normColor(x.color)); // ảnh chung
+        if (!list.length) list = PRODUCT_IMAGES.slice();
+
+        list.sort((a, b) => {
+            const ma = a.isMain ? 1 : 0, mb = b.isMain ? 1 : 0;
+            if (ma !== mb) return mb - ma;
+            return Number(a.sort || 0) - Number(b.sort || 0);
+        });
+
+        return list;
+    }
+
+    // ====== RENDER GALLERY (BỊ THIẾU NÊN CLICK MÀU KHÔNG ĐỔI ẢNH) ======
+    window.setGalleryImages = function (list) {
+        const images = Array.isArray(list) ? list : [];
+
+        const main = document.getElementById('mainImage');
+        const thumbs = document.querySelector('.thumbnails');
+        const wrapper = document.querySelector('.thumbnails-wrapper');
+
+        if (!main || !thumbs) return;
+
+        // Update ảnh chính
+        if (images.length > 0) {
+            main.src = images[0].url;
+            main.alt = images[0].alt || main.alt || '';
+        }
+
+        // Rebuild thumbnails
+        thumbs.innerHTML = '';
+        const maxThumb = 6;
+
+        images.slice(0, maxThumb).forEach((im, idx) => {
+            const img = document.createElement('img');
+            img.src = im.url;
+            img.alt = im.alt || '';
+            img.className = 'thumbnail' + (idx === 0 ? ' active' : '');
+            img.onclick = function () { window.changeImage(this); };
+            thumbs.appendChild(img);
+        });
+
+        // reset scroll thumbnail
+        if (wrapper) wrapper.scrollLeft = 0;
+    };
+
+    // các hàm đang được gọi bởi onclick trong HTML nhưng file hiện tại chưa định nghĩa
+    window.changeImage = function (thumbEl) {
+        const main = document.getElementById('mainImage');
+        if (!main || !thumbEl) return;
+
+        main.src = thumbEl.src;
+        main.alt = thumbEl.alt || '';
+
+        document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+        thumbEl.classList.add('active');
+    };
+
+    window.prevThumb = function () {
+        const wrapper = document.querySelector('.thumbnails-wrapper');
+        if (!wrapper) return;
+        wrapper.scrollLeft -= 160;
+    };
+
+    window.nextThumb = function () {
+        const wrapper = document.querySelector('.thumbnails-wrapper');
+        if (!wrapper) return;
+        wrapper.scrollLeft += 160;
+    };
+
+    window.__pendingGalleryColor = window.__pendingGalleryColor || '';
+    window.updateGalleryByColor = function (colorName) {
+        window.__pendingGalleryColor = colorName || '';
+        const list = _pickImagesByColor(colorName);
+        if (typeof window.setGalleryImages === 'function') {
+            window.setGalleryImages(list);
+        }
+    };
+</script>
+
+
+<script>
+    /* =========================
+       VER PRO: Variant + Stock + Disable + Submit
+       ========================= */
+
+    // Helpers (chỉ 1 lần, không trùng tên)
+    const qs = (sel, root = document) => root.querySelector(sel);
+    const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    // Đảm bảo có window.VARIANTS để các đoạn khác dùng thống nhất
+    //  const VARIANTS = [...]
+    try {
+        if (typeof VARIANTS !== 'undefined') window.VARIANTS = VARIANTS;
+    } catch (e) {
+    }
+
+    function updateCartCountFromServer() {
+        fetch('<%=request.getContextPath()%>/cart?mode=count')
+            .then(r => r.json())
+            .then(data => {
+                const badge = qs('#cartCount');
+                if (!badge) return;
+                const total = data.count || 0;
+                badge.textContent = total;
+                badge.style.display = total > 0 ? 'inline-block' : 'none';
+            })
+            .catch(() => {
+            });
+    }
+
+    // map màu: nếu DB lưu #hex hoặc rgb(...) thì dùng luôn
+    function colorToCss(name) {
+        const n = String(name || '').trim();
+        if (!n) return '#9e9e9e';
+
+        if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(n)) return n;
+        if (/^rgb\(/i.test(n) || /^rgba\(/i.test(n)) return n;
+
+        const k = n.toLowerCase();
+        const map = {
+            'black': '#000000', 'đen': '#000000',
+            'white': '#ffffff', 'trắng': '#ffffff',
+            'red': '#e53935', 'đỏ': '#e53935',
+            'blue': '#1e88e5', 'xanh': '#1e88e5', 'xanh dương': '#1e88e5',
+            'navy': '#0b1f46', 'xanh navy': '#0b1f46',
+            'gray': '#9e9e9e', 'grey': '#9e9e9e', 'xám': '#9e9e9e',
+            'beige': '#d7c4a3', 'kem': '#d7c4a3',
+            'brown': '#6d4c41', 'nâu': '#6d4c41',
+            'green': '#43a047', 'xanh lá': '#43a047',
+            'yellow': '#fdd835', 'vàng': '#fdd835',
+            'orange': '#fb8c00', 'cam': '#fb8c00',
+            'pink': '#ec407a', 'hồng': '#ec407a'
+        };
+        return map[k] || '#9e9e9e';
+    }
+
+    function initVariantSelectorPro() {
+        const VARS = Array.isArray(window.VARIANTS) ? window.VARIANTS : [];
+
+        const sizeWrap  = qs('#sizeOptions');
+        const colorWrap = qs('#colorOptions');
+
+        const vidHidden = qs('#variantIdHidden');
+        const errBox    = qs('#variantError');
+
+        const colorHidden = qs('#variantColorHidden');
+        const sizeHidden  = qs('#variantSizeHidden');
+
+        const qtyInput = qs('#qtyInput');
+        const btnMinus = qs('#qtyMinus');
+        const btnPlus  = qs('#qtyPlus');
+
+        const btnAdd = qs('#btnAddToCart');
+        const btnBuy = qs('#btnBuyNowProduct');
+
+        const hint = qs('#variantStockHint'); // dòng dưới số lượng
+
+        if (!sizeWrap || !colorWrap || !qtyInput) return;
+
+        const uniq = (arr) => Array.from(new Set((arr || []).map(x => String(x ?? '').trim()))).filter(Boolean);
+
+        const sizesAll  = uniq(VARS.map(v => v.size))
+            .sort((a,b)=> (Number(a)-Number(b)) || String(a).localeCompare(String(b),'vi'));
+        const colorsAll = uniq(VARS.map(v => v.color));
+
+        let selectedColor = '';
+        let selectedSize  = '';
+
+        const findVariant = (sz, cl) =>
+            VARS.find(v => String(v.size).trim() === String(sz).trim()
+                && String(v.color).trim() === String(cl).trim()) || null;
+
+        const sumStockByColor = (cl) =>
+            VARS.filter(v => String(v.color).trim() === String(cl).trim())
+                .reduce((s,v)=> s + (Number(v.stock||0)||0), 0);
+
+        const sumStockBySize = (sz) =>
+            VARS.filter(v => String(v.size).trim() === String(sz).trim())
+                .reduce((s,v)=> s + (Number(v.stock||0)||0), 0);
+
+        // null = không có biến thể đó, 0 = có nhưng hết, >0 = còn
+        const stockOf = (cl, sz) => {
+            const v = findVariant(sz, cl);
+            return v ? (Number(v.stock || 0) || 0) : null;
+        };
+
+        const pickFirstSizeForColor = (cl) =>
+            sizesAll.find(sz => {
+                const st = stockOf(cl, sz);
+                return st != null && st > 0;
+            }) || '';
+
+        const pickFirstColorForSize = (sz) =>
+            colorsAll.find(cl => {
+                const st = stockOf(cl, sz);
+                return st != null && st > 0;
+            }) || '';
+
+        function setButtonsEnabled(ok) {
+            if (btnAdd) btnAdd.disabled = !ok;
+            if (btnBuy) btnBuy.disabled = !ok;
+
+            qtyInput.disabled = !ok;
+            if (btnMinus) btnMinus.disabled = !ok;
+            if (btnPlus)  btnPlus.disabled  = !ok;
+        }
+
+        function showError(msg) {
+            if (!errBox) return;
+            errBox.textContent = msg || '';
+            errBox.style.display = msg ? 'block' : 'none';
+        }
+
+        function setHint(type, text) {
+            if (!hint) return;
+            hint.classList.remove('is-low','is-out');
+            if (type) hint.classList.add(type);
+            hint.textContent = text || '';
+        }
+
+        function clampQty(maxStock) {
+            let q = parseInt(qtyInput.value || '1', 10);
+            if (!Number.isFinite(q) || q < 1) q = 1;
+
+            const max = Number(maxStock || 0);
+            if (max > 0) q = Math.min(q, max);
+
+            qtyInput.value = String(q);
+            qtyInput.max = max > 0 ? String(max) : '1';
+        }
+
+        function renderSizes() {
+            sizeWrap.innerHTML = '';
+
+            sizesAll.forEach(sz => {
+                let st, enabled, title;
+
+                if (selectedColor) {
+                    st = stockOf(selectedColor, sz);
+                    enabled = (st != null && st > 0);
+                    title = (st == null) ? 'Không có size này cho màu đã chọn' : (st <= 0 ? 'Hết hàng' : `Còn ${st}`);
+                } else {
+                    st = sumStockBySize(sz);
+                    enabled = st > 0;
+                    title = enabled ? `Còn ${st}` : 'Hết hàng';
+                }
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'size-option' + (String(sz) === String(selectedSize) ? ' active' : '') + (enabled ? '' : ' disabled');
+                btn.textContent = String(sz);
+
+                // badge
+                const badge = document.createElement('span');
+                badge.className = 'opt-stock';
+                badge.textContent = String(st ?? 0);
+                btn.appendChild(badge);
+
+                btn.title = title;
+
+                if (!enabled) btn.disabled = true;
+
+                btn.addEventListener('click', () => {
+                    if (btn.disabled) return;
+                    selectedSize = sz;
+
+                    // nếu đã chọn màu nhưng size này không còn (tránh edge-case) -> tự chọn màu còn hàng cho size
+                    if (selectedColor) {
+                        const x = stockOf(selectedColor, selectedSize);
+                        if (x == null || x <= 0) selectedColor = pickFirstColorForSize(selectedSize);
+                    } else {
+                        // chưa chọn màu -> auto chọn màu còn hàng đầu tiên cho size
+                        selectedColor = pickFirstColorForSize(selectedSize);
+                    }
+
+                    renderColors();
+                    renderSizes();
+                    syncState();
+                });
+
+                sizeWrap.appendChild(btn);
+            });
+        }
+
+        function renderColors() {
+            colorWrap.innerHTML = '';
+
+            colorsAll.forEach(cl => {
+                let st, enabled, title;
+
+                if (selectedSize) {
+                    st = stockOf(cl, selectedSize);
+                    enabled = (st != null && st > 0);
+                    title = (st == null) ? 'Không có màu này cho size đã chọn' : (st <= 0 ? 'Hết hàng' : `Còn ${st}`);
+                } else {
+                    st = sumStockByColor(cl);
+                    enabled = st > 0;
+                    title = enabled ? `Còn ${st}` : 'Hết hàng';
+                }
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'color-option' + (String(cl) === String(selectedColor) ? ' active' : '') + (enabled ? '' : ' disabled');
+                btn.setAttribute('data-color-name', cl);
+                btn.style.backgroundColor = colorToCss(cl);
+
+                // trắng cho dễ nhìn
+                const low = String(cl || '').trim().toLowerCase();
+                if (low === 'white' || low === 'trắng') btn.style.boxShadow = 'inset 0 0 0 2px #ddd';
+
+                // badge
+                const badge = document.createElement('span');
+                badge.className = 'opt-stock';
+                badge.textContent = String(st ?? 0);
+                btn.appendChild(badge);
+
+                btn.title = title;
+
+                if (!enabled) btn.disabled = true;
+
+                btn.addEventListener('click', () => {
+                    if (btn.disabled) return;
+
+                    selectedColor = cl;
+
+                    // đổi màu -> auto chọn size còn hàng đầu tiên của màu đó
+                    const nextSize = pickFirstSizeForColor(selectedColor);
+                    if (nextSize) selectedSize = nextSize;
+
+                    renderColors();
+                    renderSizes();
+                    syncState();
+
+                    // đổi màu -> đổi ảnh theo màu
+                    if (typeof window.updateGalleryByColor === 'function') {
+                        window.updateGalleryByColor(selectedColor);
+                    }
+                });
+
+                colorWrap.appendChild(btn);
+            });
+        }
+
+        function syncState() {
+            if (colorHidden) colorHidden.value = selectedColor || '';
+            if (sizeHidden)  sizeHidden.value  = selectedSize  || '';
+
+            if (!selectedColor || !selectedSize) {
+                if (vidHidden) vidHidden.value = '';
+                setButtonsEnabled(false);
+                clampQty(0);
+                showError('');
+                setHint('', 'Vui lòng chọn màu & size để xem tồn kho.');
+                return;
+            }
+
+            const v = findVariant(selectedSize, selectedColor);
+            if (!v) {
+                if (vidHidden) vidHidden.value = '';
+                setButtonsEnabled(false);
+                clampQty(0);
+                showError('Biến thể không tồn tại.');
+                setHint('is-out', 'Phiên bản này không tồn tại.');
+                return;
+            }
+
+            const stock = Number(v.stock || 0) || 0;
+            if (vidHidden) vidHidden.value = String(v.id);
+
+            if (stock <= 0) {
+                setButtonsEnabled(false);
+                clampQty(0);
+                showError('Phiên bản bạn chọn đã hết hàng.');
+                setHint('is-out', 'Phiên bản này đã hết hàng.');
+                return;
+            }
+
+            setButtonsEnabled(true);
+            clampQty(stock);
+            showError('');
+
+            if (stock <= 3) setHint('is-low', `Sắp hết: còn ${stock} đôi cho phiên bản này.`);
+            else setHint('', `Còn ${stock} đôi cho phiên bản này.`);
+        }
+
+        // preselect: biến thể còn hàng đầu tiên
+        const first = VARS.find(x => (Number(x.stock || 0) || 0) > 0) || VARS[0] || null;
+        if (first) {
+            selectedColor = first.color || '';
+            selectedSize  = first.size  || '';
+        }
+
+        renderColors();
+        renderSizes();
+        syncState();
+
+        // init gallery theo màu default
+        if (selectedColor && typeof window.updateGalleryByColor === 'function') {
+            window.updateGalleryByColor(selectedColor);
+        }
+
+        // qty +/- theo max đã clamp
+        function changeQty(delta) {
+            if (qtyInput.disabled) return;
+            let q = parseInt(qtyInput.value || '1', 10);
+            if (!Number.isFinite(q) || q < 1) q = 1;
+
+            const max = parseInt(qtyInput.max || '9999', 10) || 9999;
+            q = Math.max(1, Math.min(max, q + delta));
+            qtyInput.value = String(q);
+        }
+        btnMinus?.addEventListener('click', () => changeQty(-1));
+        btnPlus?.addEventListener('click', () => changeQty(+1));
+    }
+
+
+    function submitAddToCart(buyNow) {
+        const variantId = String(qs('#variantIdHidden')?.value || '').trim();
+        const qty = parseInt(qs('#qtyInput')?.value || '1', 10) || 1;
+
+        const VARS = Array.isArray(window.VARIANTS) ? window.VARIANTS : [];
+        if (VARS.length > 0 && !variantId) {
+            const err = qs('#variantError');
+            if (err) {
+                err.textContent = 'Vui lòng chọn màu/size trước khi thêm vào giỏ.';
+                err.style.display = 'block';
+            }
+            return;
+        }
+
+        qs('#formVariantId').value = variantId;
+        qs('#formQty').value = String(Math.max(1, qty));
+        qs('#formBuyNow').value = buyNow ? '1' : '0';
+        qs('#addToCartForm').submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCartCountFromServer();
+        initVariantSelectorPro();
+
+        qs('#btnAddToCart')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            submitAddToCart(false);
+        });
+
+        qs('#btnBuyNowProduct')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            submitAddToCart(true);
+        });
+    });
+</script>
+
+<script src="<%=request.getContextPath()%>/assets/js/review.js"></script>
+
 
 </body>
 </html>

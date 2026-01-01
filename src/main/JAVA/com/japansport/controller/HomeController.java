@@ -1,5 +1,7 @@
 package com.japansport.controller;
 
+import com.japansport.dao.BrandDao;
+
 import com.japansport.dao.ProductDao;
 import com.japansport.model.Product;
 import jakarta.servlet.*;
@@ -8,7 +10,9 @@ import jakarta.servlet.annotation.*;
 import com.japansport.dao.BannerDao;
 import com.japansport.model.Banner;
 import com.japansport.model.Category;
+import com.japansport.model.Brand;
 import com.japansport.dao.CategoryDao;
+
 
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +23,8 @@ public class HomeController extends HttpServlet {
     private ProductDao productDao;
     private BannerDao bannerDao;
     private CategoryDao categoryDao;
+    private BrandDao brandDao;
+
 
 
     @Override
@@ -26,6 +32,8 @@ public class HomeController extends HttpServlet {
         productDao = new ProductDao();
         bannerDao = new BannerDao();
         categoryDao = new CategoryDao();
+        brandDao = new BrandDao();
+
     }
 
     @Override
@@ -52,11 +60,13 @@ public class HomeController extends HttpServlet {
             /*List<Category> featuredCategories = categoryDao.getFeaturedCategories(6);*/
             List<Category> featuredCategories = categoryDao.getFeaturedCategories(6);
 
+            List<Brand> brands = brandDao.getAllActive();
+
             // Debug xem có dữ liệu không
             System.out.println("HomeController - productList size = " + productList.size());
 
-/* SET ATTRIBUTE (gắn giá trị) */
-            // Gắn cho 2 section
+
+            /* SET ATTRIBUTE (gắn giá trị) */
             request.setAttribute("productList", productList);        // Sản phẩm mới nhất
             request.setAttribute("bestSellerProducts", productList); // Sản phẩm bán chạy
 
@@ -73,6 +83,8 @@ public class HomeController extends HttpServlet {
             request.setAttribute("womenProducts", womenProducts);
 
             request.setAttribute("featuredCategories", featuredCategories);
+
+            request.setAttribute("brands", brands);
 
             // Trả về index.jsp
             request.getRequestDispatcher("index.jsp").forward(request, response);

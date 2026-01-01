@@ -1,11 +1,14 @@
 package com.japansport.controller;
 
 import com.japansport.dao.ProductDao;
-import com.japansport.dao.BrandDao;
 import com.japansport.dao.ProductImageDao;
+import com.japansport.dao.ProductVariantDAO;
+import com.japansport.dao.ProductSpecDao;
 import com.japansport.model.Product;
-import com.japansport.model.Brand;
 import com.japansport.model.ProductImage;
+import com.japansport.model.ProductVariant;
+import com.japansport.model.ProductSpec;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,62 +16,71 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 
-@WebServlet(name = "ProductDetailController", value = "/product")
+@WebServlet(name = "ProductDetailController", urlPatterns = {"/product-detail", "/product"})
 public class ProductDetailController extends HttpServlet {
 
     private final ProductDao productDao = new ProductDao();
-    private final BrandDao brandDao = new BrandDao();
     private final ProductImageDao productImageDao = new ProductImageDao();
+    private final ProductVariantDAO variantDAO = new ProductVariantDAO();
+    private final ProductSpecDao specDao = new ProductSpecDao();
+
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Lấy id từ URL: /product?id=5
+        // Accept both: /product-detail?id=1  OR  /product-detail?productId=1
         String idParam = request.getParameter("id");
-        if (idParam == null || idParam.trim().isEmpty()) {
-            // Không có id → quay về danh sách sản phẩm
+        if (idParam == null || idParam.isBlank()) {
+            idParam = request.getParameter("productId");
+        }
+
+        int productId;
+        try {
+            productId = Integer.parseInt(idParam);
+        } catch (Exception e) {
             response.sendRedirect(request.getContextPath() + "/list-product");
             return;
         }
 
-        int id;
+        Product product = productDao.getById(productId);
+        if (product == null) {
+            response.sendRedirect(request.getContextPath() + "/list-product");
+            return;
+        }
+
+        List<ProductImage> images;
         try {
-            id = Integer.parseInt(idParam);
-        } catch (NumberFormatException e) {
-            // id không phải số
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID sản phẩm không hợp lệ");
-            return;
+            images = productImageDao.getByProductId(productId);
+        } catch (Exception e) {
+            images = Collections.emptyList();
         }
 
-        // Lấy sản phẩm từ DB
-        Product p = productDao.getById(id);
-        if (p == null) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy sản phẩm");
-            return;
+        List<ProductVariant> variants;
+        try {
+            variants = variantDAO.findByProductId(productId);
+        } catch (Exception e) {
+            variants = Collections.emptyList();
         }
 
-        // Gắn Brand cho sản phẩm nếu có brandId
-        if (p.getBrand() == null && p.getBrandId() != null) {
-            Brand brand = brandDao.getById(p.getBrandId());
-            p.setBrand(brand);
+        List<ProductSpec> specs;
+        try {
+            specs = specDao.findByProductId(productId);
+        } catch (Exception e) {
+            specs = Collections.emptyList();
         }
 
-        // Lấy danh sách ảnh gallery của sản phẩm
-        List<ProductImage> images = productImageDao.getByProductId(id);
 
-        // Đưa dữ liệu xuống JSP
-        request.setAttribute("product", p);
+
+        request.setAttribute("product", product);
         request.setAttribute("images", images);
+        request.setAttribute("variants", variants);
+        request.setAttribute("specs", specs);
 
-        request.getRequestDispatcher("product_detail.jsp").forward(request, response);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
+        request.getRequestDispatcher("/product_detail.jsp").forward(request, response);
     }
 }
