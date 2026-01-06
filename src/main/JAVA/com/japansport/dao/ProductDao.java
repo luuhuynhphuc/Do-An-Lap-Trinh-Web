@@ -2,9 +2,7 @@ package com.japansport.dao;
 
 import com.japansport.model.Product;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,6 +74,108 @@ public class ProductDao extends DAO {
             default:
                 // sortKey lạ -> fallback về updated_at
                 return " ORDER BY updated_at DESC, id DESC";
+        }
+    }
+    // ================== CRUD METHODS ==========================
+    /**
+     * INSERT - them sp
+     */
+    public int insert(Product product) {
+        String sql = "INSERT INTO products (name, image_url, price, old_price, gender, category_id, brand_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnect.getInstance().getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, product.getName());
+            ps.setString(2, product.getImage_url());
+            ps.setDouble(3, product.getPrice());
+            ps.setDouble(4, product.getOld_price());
+
+            if (product.getGender() != null && !product.getGender().isEmpty()) {
+                ps.setString(5, product.getGender());
+            } else {
+                ps.setNull(5, Types.VARCHAR);
+            }
+
+            if (product.getCategoryId() != null) {
+                ps.setInt(6, product.getCategoryId());
+            } else {
+                ps.setNull(6, Types.INTEGER);
+            }
+            if (product.getBrandId() != null) {
+                ps.setInt(7, product.getBrandId());
+            } else {
+                ps.setNull(7, Types.INTEGER);
+            }
+
+            int affectedRows = ps.executeUpdate();
+
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        return generatedKeys.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    /**
+     * UPDATE - cap nhat sp
+     */
+    public boolean update(Product product) {
+        String sql = "UPDATE products SET name=?, image_url=?, price=?, old_price=?, " +
+                "gender=?, category_id=?, brand_id=? WHERE id=?";
+
+        try (Connection conn = DBConnect.getInstance().getConnect();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, product.getName());
+            ps.setString(2, product.getImage_url());
+            ps.setDouble(3, product.getPrice());
+            ps.setDouble(4, product.getOld_price());
+
+            if (product.getGender() != null && !product.getGender().isEmpty()) {
+                ps.setString(5, product.getGender());
+            } else {
+                ps.setNull(5, Types.VARCHAR);
+            }
+
+            if (product.getCategoryId() != null) {
+                ps.setInt(6, product.getCategoryId());
+            } else {
+                ps.setNull(6, Types.INTEGER);
+            }
+
+            if (product.getBrandId() != null) {
+                ps.setInt(7, product.getBrandId());
+            } else {
+                ps.setNull(7, Types.INTEGER);
+            }
+            ps.setInt(8, product.getId());
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    /**
+     * DELETE - xoa sp
+     */
+    public boolean delete(int id) {
+        String sql = "DELETE FROM products WHERE id=?";
+
+        try (Connection conn = DBConnect.getInstance().getConnect();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @WebServlet(name = "CategoryAdminServlet", urlPatterns = {"/admin/categories"})
+@MultipartConfig
 public class CategoryAdminServlet extends HttpServlet {
 
     private CategoryDao categoryDao;
@@ -30,7 +31,7 @@ public class CategoryAdminServlet extends HttpServlet {
 
         String action = request.getParameter("action");
 
-        if ("getAll".equals(action)) {
+        if ("list".equals(action) || "getAll".equals(action)) {
             getAllCategories(request, response);
         } else if ("getById".equals(action)) {
             getCategoryById(request, response);
