@@ -62,8 +62,9 @@ public class UserDao extends DAO implements IDAO<User> {
                 System.out.println("User already exists" + user.getId());
                 return 0;
             }
-            String sql = String.format("INSERT INTO users (id, email, password, name, active) VALUES (%d,'%s','%s','%s',%d)",
-                    user.getId(), user.getEmail(), user.getPassword(), user.getName(), user.getActive(), user.getRole() != null ? user.getRole() : "customer"
+            String sql = String.format( "INSERT INTO users (id, email, password, name, active, role) VALUES (%d,'%s','%s','%s',%d,'%s')",
+                    user.getId(), user.getEmail(), user.getPassword(), user.getName(), user.getActive(),
+                    user.getRole() != null ? user.getRole() : "customer"
             );
             return statement.executeUpdate(sql);
         } catch (SQLException e) {
@@ -82,9 +83,12 @@ public class UserDao extends DAO implements IDAO<User> {
                 return 0;
             }
             String sql = String.format(
-                    "update users set email ='%s', password ='%s', name='%s', active=%d where id=%d",
-                    t.getEmail(), t.getPassword(), t.getName(), t.getActive(), t.getRole() != null ? t.getRole() : "customer", t.getId()
+                    "UPDATE users SET email='%s', password='%s', name='%s', active=%d, role='%s' WHERE id=%d",
+                    t.getEmail(), t.getPassword(), t.getName(), t.getActive(),
+                    t.getRole() != null ? t.getRole() : "customer",
+                    t.getId()
             );
+
             return statement.executeUpdate(sql);
 
         } catch (SQLException e) {
@@ -100,22 +104,33 @@ public class UserDao extends DAO implements IDAO<User> {
             // Kiểm tra xem id đã tồn tại chưa
             ResultSet rs = st.executeQuery("SELECT id FROM users WHERE id=" + t.getId());
             if (rs.next()) {
-                // Tồn tại -> UPDATE
+                // Nếu tồn tại -> UPDATE
                 String sql = String.format(
-                        "UPDATE users SET email='%s', password='%s', name='%s', active=%d WHERE id=%d",
-                        t.getEmail(), t.getPassword(), t.getName(), t.getActive(), t.getRole() != null ? t.getRole() : "customer", t.getId()
+                        "UPDATE users SET email='%s', password='%s', name='%s', active=%d, role='%s' WHERE id=%d",
+                        t.getEmail(),
+                        t.getPassword(),
+                        t.getName(),
+                        t.getActive(),
+                        t.getRole() != null ? t.getRole() : "customer",
+                        t.getId()
                 );
                 int affected = st.executeUpdate(sql);
                 System.out.println("save: UPDATE affected = " + affected);
             } else {
-                // Chưa có -> INSERT với id do bạn truyền vào
+                // Nếu chưa có -> INSERT
                 if (t.getId() <= 0) {
-                    System.out.println("save: Không thể INSERT vì id <= 0 (đang dùng chiến lược tự đặt id).");
+                    System.out.println("save: Không thể INSERT vì id <= 0.");
                     return;
                 }
+
                 String sql = String.format(
-                        "INSERT INTO users (id, email, password, name, active) VALUES (%d,'%s','%s','%s',%d)",
-                        t.getId(), t.getEmail(), t.getPassword(), t.getName(), t.getActive(), t.getRole() != null ? t.getRole() : "customer"
+                        "INSERT INTO users (id, email, password, name, active, role) VALUES (%d, '%s', '%s', '%s', %d, '%s')",
+                        t.getId(),
+                        t.getEmail(),
+                        t.getPassword(),
+                        t.getName(),
+                        t.getActive(),
+                        t.getRole() != null ? t.getRole() : "customer"
                 );
                 int affected = st.executeUpdate(sql);
                 System.out.println("save: INSERT affected = " + affected);
@@ -124,6 +139,7 @@ public class UserDao extends DAO implements IDAO<User> {
             throw new RuntimeException(e);
         }
     }
+
 
     @Override
 
