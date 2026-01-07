@@ -15,9 +15,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-@WebServlet(name = "UserAdminServlet", urlPatterns = {"/admin/users"})
+@WebServlet(name = "ManageUserAdminServlet", urlPatterns = {"/admin/users"})
 @MultipartConfig
-public class UserAdminServlet extends HttpServlet {
+public class ManageUserAdminServlet extends HttpServlet {
 
     private final UserDao userDao = new UserDao();
     private final Gson gson = new Gson();

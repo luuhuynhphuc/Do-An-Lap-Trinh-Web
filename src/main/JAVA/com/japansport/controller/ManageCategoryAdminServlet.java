@@ -12,9 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(name = "CategoryAdminServlet", urlPatterns = {"/admin/categories"})
+@WebServlet(name = "ManageCategoryAdminServlet", urlPatterns = {"/admin/categories"})
 @MultipartConfig
-public class CategoryAdminServlet extends HttpServlet {
+public class ManageCategoryAdminServlet extends HttpServlet {
 
     private CategoryDao categoryDao;
     private Gson gson;

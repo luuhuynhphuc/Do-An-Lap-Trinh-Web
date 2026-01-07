@@ -15,9 +15,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-@WebServlet(name = "ProductAdminServlet", urlPatterns = {"/admin/products"})
+@WebServlet(name = "ManageProductAdminServlet", urlPatterns = {"/admin/products"})
 @MultipartConfig
-public class ProductAdminServlet extends HttpServlet {
+public class ManageProductAdminServlet extends HttpServlet {
 
     private final ProductDao productDao = new ProductDao();
     private final CategoryDao categoryDao = new CategoryDao();
