@@ -12,7 +12,7 @@ public class UserDao extends DAO implements IDAO<User> {
     public List<User> getAll() {
         try {
             final Statement statement = getStatement();
-            final ResultSet rs = statement.executeQuery("select * from users");
+            final ResultSet rs = statement.executeQuery("SELECT id, email, name, password, active, role FROM users");
             List<User> users = new ArrayList<>();
             while (rs.next()) {
                 users.add(new User(rs.getInt(1), rs.getString(2), rs.getString(3),
@@ -28,7 +28,7 @@ public class UserDao extends DAO implements IDAO<User> {
     public User getById(int id) {
         try {
             final Statement statement = getStatement();
-            final ResultSet rs = statement.executeQuery(" SELECT * FROM users WHERE id=" + id);
+            final ResultSet rs = statement.executeQuery("SELECT id, email, name, password, active, role FROM users WHERE id=" + id);
             if (rs.next()) {
                 return new User(
                         rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getInt(5), rs.getString(6));
