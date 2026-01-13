@@ -207,6 +207,25 @@
                         </li>
                     </ul>
                 </li>
+                <!--TIN TỨC MỚI  -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="<%= ctx %>/news" data-bs-toggle="dropdown">TIN TỨC</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="<%= ctx %>/news">Tất cả tin tức</a></li>
+
+                                        <!-- Nếu bạn muốn hiển thị danh mục tin tức động từ database -->
+                                        <c:if test="${not empty newsCategories}">
+                                            <li><hr class="dropdown-divider"></li>
+                                            <c:forEach var="cat" items="${newsCategories}">
+                                                <li>
+                                                    <a class="dropdown-item" href="<%= ctx %>/news?category=${cat.slug}">
+                                                        ${cat.name}
+                                                    </a>
+                                                </li>
+                                            </c:forEach>
+                                        </c:if>
+                                    </ul>
+                                </li>
             </ul>
         </div>
     </div>

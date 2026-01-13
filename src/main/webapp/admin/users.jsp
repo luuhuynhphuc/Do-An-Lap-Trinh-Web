@@ -29,8 +29,9 @@
                 <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
                    href="#" data-bs-toggle="dropdown">
                     <span class="avatar-wrap position-relative">
-                        <img src="${pageContext.request.contextPath}/images/admin1.png"
+                        <img src="${pageContext.request.contextPath}/admin/images/admin1.png"
                              class="rounded-circle" width="32" height="32" alt="">
+
                         <span class="online"></span>
                     </span>
                 </a>

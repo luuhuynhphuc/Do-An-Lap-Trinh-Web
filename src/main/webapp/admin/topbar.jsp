@@ -19,7 +19,7 @@
                 <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
                    href="#" data-bs-toggle="dropdown">
                     <span class="me-2">${sessionScope.currentUser.name}</span>
-                    <i class="bi bi-person-circle fs-4"></i>
+                    <img src="${pageContext.request.contextPath}/admin/images/admin1.png" class="rounded-circle" width="32" height="32" alt="">
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
