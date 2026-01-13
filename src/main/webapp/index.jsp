@@ -624,22 +624,31 @@
             </div>
 
             <div class="col-lg-3 col-md-6">
-                <h5 class="text-uppercase mb-3">CHÍNH SÁCH</h5>
-                <ul class="list-unstyled">
-                    <li class="mb-2"><a href="news.html" class="text-light text-decoration-none">THÔNG TIN ĐIỆN TỬ</a>
-                    </li>
-                    <li class="mb-2"><a href="shipping_policy.html" class="text-light text-decoration-none">Chính sách
-                        vận chuyển</a></li>
-                    <li class="mb-2"><a href="return_policy.html" class="text-light text-decoration-none">Chính sách đổi
-                        trả</a></li>
-                    <li class="mb-2"><a href="ordering_instructions.html" class="text-light text-decoration-none">Hướng
-                        dẫn đặt hàng</a></li>
-                    <li class="mb-2"><a href="payment_in4.html" class="text-light text-decoration-none">Thông tin thanh
-                        toán</a></li>
-                    <li class="mb-2"><a href="#" class="text-light text-decoration-none">Thông tin về JAPANBABY</a></li>
-                    <li class="mb-2"><a href="#" class="text-light text-decoration-none">Chính sách vận chuyển</a></li>
-                </ul>
-            </div>
+                            <h5 class="text-uppercase mb-3">CHÍNH SÁCH</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <a href="${pageContext.request.contextPath}/news.html" class="text-light text-decoration-none">
+                                        THÔNG TIN ĐIỆN TỬ
+                                    </a>
+                                </li>
+
+                                <%-- Hiển thị động từ database --%>
+                                <c:forEach items="${policies}" var="policy">
+                                    <li class="mb-2">
+                                        <a href="${pageContext.request.contextPath}/policy?slug=${policy.slug}"
+                                           class="text-light text-decoration-none">
+                                            ${policy.title}
+                                        </a>
+                                    </li>
+                                </c:forEach>
+
+                                <li class="mb-2">
+                                    <a href="${pageContext.request.contextPath}/about" class="text-light text-decoration-none">
+                                        Thông tin về JAPANBABY
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
             <div class="col-lg-3 col-md-6">
                 <h5 class="text-uppercase mb-3">FACEBOOK</h5>

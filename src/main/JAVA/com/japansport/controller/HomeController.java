@@ -1,6 +1,8 @@
 package com.japansport.controller;
 
+import com.japansport.dao.PolicyDao;
 import com.japansport.dao.ProductDao;
+import com.japansport.model.Policy;
 import com.japansport.model.Product;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -73,6 +75,11 @@ public class HomeController extends HttpServlet {
             request.setAttribute("womenProducts", womenProducts);
 
             request.setAttribute("featuredCategories", featuredCategories);
+
+            //Load policies cho footer
+            PolicyDao policyDao = new PolicyDao();
+            List<Policy> policies = policyDao.getAll();
+            request.setAttribute("policies", policies);
 
             // Trả về index.jsp
             request.getRequestDispatcher("index.jsp").forward(request, response);
