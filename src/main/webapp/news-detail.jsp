@@ -45,6 +45,7 @@
             object-fit: cover;
             border-radius: 8px;
             margin: 2rem 0;
+            background: #f0f0f0;
         }
         .news-content {
             font-size: 1.1rem;
@@ -99,6 +100,7 @@
         .related-news-thumb {
             height: 180px;
             object-fit: cover;
+            background: #f0f0f0;
         }
         .sidebar-widget {
             position: sticky;
@@ -116,6 +118,7 @@
             height: 60px;
             object-fit: cover;
             border-radius: 4px;
+            background: #f0f0f0;
         }
     </style>
 </head>
@@ -212,7 +215,7 @@
                     <img src="${news.thumbnailUrl}"
                          class="news-thumbnail-main"
                          alt="${news.title}"
-                         onerror="this.style.display='none'">
+                         onerror="handleImageError(this)">
                 </c:if>
 
                 <!-- Content -->
@@ -255,7 +258,7 @@
                                         <img src="${related.thumbnailUrl}"
                                              class="card-img-top related-news-thumb"
                                              alt="${related.title}"
-                                             onerror="this.src='${ctx}/assets/images/no-image.png'">
+                                             onerror="handleImageError(this)">
                                     </a>
                                     <div class="card-body">
                                         <h5 class="card-title">
@@ -295,7 +298,7 @@
                                             <img src="${featured.thumbnailUrl}"
                                                  class="sidebar-news-thumb"
                                                  alt="${featured.title}"
-                                                 onerror="this.src='${ctx}/assets/images/no-image.png'">
+                                                 onerror="handleImageError(this)">
                                             <div class="flex-grow-1">
                                                 <a href="${ctx}/news/${featured.slug}"
                                                    class="text-dark text-decoration-none fw-semibold d-block mb-1"
@@ -353,5 +356,21 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Xử lý lỗi hình ảnh an toàn - Tránh vòng lặp vô hạn
+function handleImageError(img) {
+    // Kiểm tra đã xử lý rồi không
+    if (img.dataset.errorHandled === 'true') {
+        return;
+    }
+
+    // Đánh dấu đã xử lý
+    img.dataset.errorHandled = 'true';
+
+    // Dùng SVG placeholder (không phụ thuộc URL bên ngoài)
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" font-size="16" fill="%23999" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+}
+</script>
+
 </body>
 </html>

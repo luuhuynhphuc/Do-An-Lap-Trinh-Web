@@ -18,6 +18,7 @@
             border: 1px solid #dee2e6;
             border-radius: 4px;
             padding: 5px;
+            background: #f8f9fa;
         }
         .status-badge {
             font-size: 0.75rem;
@@ -96,7 +97,7 @@
                                                     <img src="${brand.logoUrl}"
                                                          alt="${brand.name}"
                                                          class="brand-logo"
-                                                         onerror="this.src='${ctx}/assets/images/no-logo.png'">
+                                                         onerror="handleImageError(this)">
                                                 </c:when>
                                                 <c:otherwise>
                                                     <div class="brand-logo d-flex align-items-center justify-content-center bg-light text-muted">
@@ -165,6 +166,20 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
+// Xử lý lỗi hình ảnh an toàn - Tránh vòng lặp vô hạn
+function handleImageError(img) {
+    // Kiểm tra đã xử lý rồi không
+    if (img.dataset.errorHandled === 'true') {
+        return;
+    }
+
+    // Đánh dấu đã xử lý
+    img.dataset.errorHandled = 'true';
+
+    // Dùng SVG placeholder (không phụ thuộc URL bên ngoài)
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect fill="%23f0f0f0" width="60" height="60"/%3E%3Ctext x="50%25" y="50%25" font-size="10" fill="%23999" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+}
+
 function confirmDelete(id, name) {
     if (confirm('Bạn có chắc chắn muốn xóa nhãn hàng "' + name + '"?\n\nLưu ý: Nếu có sản phẩm đang sử dụng nhãn hàng này, thao tác sẽ thất bại.')) {
         window.location.href = '${ctx}/admin/brands?action=delete&id=' + id;

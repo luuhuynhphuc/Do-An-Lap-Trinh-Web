@@ -24,6 +24,7 @@
             height: 60px;
             object-fit: cover;
             border-radius: 4px;
+            background: #f0f0f0;
         }
         .category-tag {
             font-size: 0.7rem;
@@ -194,7 +195,7 @@
                                         <img src="${news.thumbnailUrl}"
                                              alt="${news.title}"
                                              class="news-thumbnail"
-                                             onerror="this.src='${pageContext.request.contextPath}/assets/images/no-image.png'">
+                                             onerror="handleImageError(this)">
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
@@ -279,6 +280,20 @@ $("#globalSearch")?.addEventListener("input", (e) => {
         tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
     });
 });
+
+// Xử lý lỗi hình ảnh an toàn - Tránh vòng lặp vô hạn
+function handleImageError(img) {
+    // Kiểm tra đã xử lý rồi không
+    if (img.dataset.errorHandled === 'true') {
+        return;
+    }
+
+    // Đánh dấu đã xử lý
+    img.dataset.errorHandled = 'true';
+
+    // Dùng SVG placeholder (không phụ thuộc URL bên ngoài)
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="60"%3E%3Crect fill="%23f0f0f0" width="80" height="60"/%3E%3Ctext x="50%25" y="50%25" font-size="10" fill="%23999" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+}
 
 function confirmDelete(id, title) {
     if (confirm('Bạn có chắc chắn muốn xóa tin tức "' + title + '"?')) {
