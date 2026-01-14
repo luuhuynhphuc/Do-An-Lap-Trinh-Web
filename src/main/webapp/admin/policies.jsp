@@ -1,4 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -6,71 +9,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Chính sách - Japan Sport Admin</title>
 
+    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="${pageContext.request.contextPath}/admin/admin.css" rel="stylesheet">
+
+    <!-- Admin CSS -->
+    <link href="${ctx}/admin/admin.css" rel="stylesheet">
 </head>
 <body>
 
 <!-- TOPBAR -->
-<header class="cui-topbar">
-    <div class="cui-topbar__inner container-fluid">
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-link text-white d-lg-none p-0" id="btnToggleSidebar">
-                <i class="bi bi-list fs-3"></i>
-            </button>
-            <a href="${pageContext.request.contextPath}/admin/dashboard" class="d-flex align-items-center text-white text-decoration-none">
-                <span class="fw-semibold">JAPAN SPORT</span>
-            </a>
-        </div>
-
-        <ul class="cui-icons list-unstyled d-flex align-items-center mb-0 ms-auto">
-            <li class="dropdown">
-                <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-                   href="#" data-bs-toggle="dropdown">
-                    <span class="avatar-wrap position-relative">
-                        <img src="${pageContext.request.contextPath}/images/admin1.png"
-                             class="rounded-circle" width="32" height="32" alt="">
-                        <span class="online"></span>
-                    </span>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout">
-                        <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</header>
+<jsp:include page="topbar.jsp"/>
 
 <div class="d-flex min-vh-100">
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar border-end bg-white">
-        <div class="sidebar-inner">
-            <ul class="s-nav">
-                <li><a class="s-item" href="${pageContext.request.contextPath}/admin/dashboard">
-                    <i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-                </li>
-            </ul>
-            <div class="s-title">QUẢN LÝ</div>
-            <ul class="s-nav">
-                <li><a class="s-item active" href="${pageContext.request.contextPath}/admin/policies">
-                    <i class="bi bi-shield-check me-2"></i>Chính sách</a>
-                </li>
-            </ul>
-        </div>
-    </aside>
+    <jsp:include page="sidebar.jsp"/>
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow-1 p-3">
+
+        <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/admin/dashboard">Home</a></li>
-                <li class="breadcrumb-item active">Chính sách</li>
+                <li class="breadcrumb-item"><a href="${ctx}/admin/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Chính sách</li>
             </ol>
         </nav>
 
+        <!-- Header + Search + Add Button -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">Quản lý Chính sách</h4>
             <div class="d-flex gap-2">
@@ -81,28 +47,32 @@
             </div>
         </div>
 
-        <div class="card">
+        <!-- Policies Table -->
+        <div class="card shadow-sm">
             <div class="table-responsive">
-                <table class="table align-middle table-hover mb-0" id="tblPolicies">
+                <table class="table table-hover align-middle mb-0" id="tblPolicies">
                     <thead class="table-light">
                         <tr>
-                            <th>ID</th>
+                            <th style="width: 60px;">ID</th>
                             <th>Tiêu đề</th>
-                            <th>Slug</th>
-                            <th>Loại</th>
-                            <th>Thứ tự</th>
-                            <th>Trạng thái</th>
-                            <th class="text-end">Thao tác</th>
+                            <th style="width: 150px;">Slug</th>
+                            <th style="width: 120px;">Loại</th>
+                            <th style="width: 80px;">Thứ tự</th>
+                            <th style="width: 100px;">Trạng thái</th>
+                            <th style="width: 140px;" class="text-end">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <!-- Data sẽ load từ policies.js -->
+                    </tbody>
                 </table>
             </div>
         </div>
+
     </main>
 </div>
 
-<!-- MODAL ADD/EDIT -->
+<!-- MODAL ADD/EDIT POLICY -->
 <div class="modal fade" id="modalPolicy" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <form class="modal-content" id="formPolicy">
@@ -166,8 +136,9 @@
     </div>
 </div>
 
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="${pageContext.request.contextPath}/admin/policies.js"></script>
+<script src="${ctx}/admin/policies.js"></script>
 
 </body>
 </html>

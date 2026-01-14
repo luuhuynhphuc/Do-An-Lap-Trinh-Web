@@ -1,0 +1,113 @@
+/* Dashboard Specific Styles */
+
+/* Stats Cards */
+.card.stat {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card.stat .card-body {
+    padding: 1.5rem;
+}
+
+.card.stat .display-6 {
+    font-size: 2rem;
+    margin: 0.5rem 0;
+    color: #5b57ea;
+}
+
+.card.stat small {
+    font-size: 0.75rem;
+    display: block;
+    margin-top: 0.5rem;
+}
+
+/* Chart Cards */
+.card {
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+}
+
+/* Badge trong header */
+.card-header .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    vertical-align: middle;
+}
+
+/* Welcome Card */
+.card-body.text-center {
+    position: relative;
+}
+
+.card-body.text-center i.bi-check-circle-fill {
+    animation: fadeInScale 0.5s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive Stats */
+@media (max-width: 768px) {
+    .card.stat .display-6 {
+        font-size: 1.5rem;
+    }
+
+    .card.stat .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Success indicators */
+.text-success {
+    color: #28a745 !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+/* Loading state */
+.stat-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.stat-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #5b57ea;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

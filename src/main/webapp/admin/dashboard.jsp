@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%
-    // Lấy thông tin admin từ session
     com.japansport.model.User currentUser = (com.japansport.model.User) session.getAttribute("currentUser");
     if (currentUser == null || !currentUser.isAdmin()) {
         response.sendRedirect(request.getContextPath() + "/login?error=unauthorized");
@@ -15,20 +14,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Dashboard • Japan Sport Admin</title>
 
-    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
     <link href="${pageContext.request.contextPath}/admin/admin.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/admin/dashboard.css" rel="stylesheet">
 </head>
 <body>
 
-<!-- TOPBAR kiểu CoreUI -->
+<!-- TOPBAR -->
 <header class="cui-topbar">
     <div class="cui-topbar__inner container-fluid">
-        <!-- Left: logo + toggle -->
         <div class="d-flex align-items-center gap-3">
             <button class="btn btn-link text-white d-lg-none p-0" id="btnToggleSidebar">
                 <i class="bi bi-list fs-3"></i>
@@ -40,7 +37,6 @@
             </a>
         </div>
 
-        <!-- search -->
         <form class="cui-search ms-lg-5 me-3 flex-grow-1 d-none d-md-block" role="search">
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -48,7 +44,6 @@
             </div>
         </form>
 
-        <!-- Right: icons -->
         <ul class="cui-icons list-unstyled d-flex align-items-center mb-0 ms-auto">
             <li class="cui-icon">
                 <a class="text-white position-relative" href="#"><i class="bi bi-bell fs-5"></i></a>
@@ -100,7 +95,7 @@
                 <li class="has-children">
                     <a class="s-item s-parent" href="#" onclick="return false;">
                         <span><i class="bi bi-box-seam me-2"></i>Sản phẩm</span>
-                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                        <i class="bi bi-chevron-down ms-auto small chev"></i>
                     </a>
                     <ul class="s-subnav">
                         <li><a class="s-subitem" href="${pageContext.request.contextPath}/admin/products">
@@ -117,7 +112,7 @@
                 <li class="has-children">
                     <a class="s-item s-parent" href="#" onclick="return false;">
                         <span><i class="bi bi-people me-2"></i>Users</span>
-                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                        <i class="bi bi-chevron-down ms-auto small chev"></i>
                     </a>
                     <ul class="s-subnav">
                         <li><a class="s-subitem" href="${pageContext.request.contextPath}/admin/users">
@@ -128,7 +123,7 @@
                 <li class="has-children">
                     <a class="s-item s-parent" href="#" onclick="return false;">
                         <span><i class="bi bi-receipt me-2"></i>Đơn hàng</span>
-                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                        <i class="bi bi-chevron-down ms-auto small chev"></i>
                     </a>
                     <ul class="s-subnav">
                         <li><a class="s-subitem" href="${pageContext.request.contextPath}/admin/orders">
@@ -139,7 +134,7 @@
                 <li class="has-children">
                     <a class="s-item s-parent" href="#" onclick="return false;">
                         <span><i class="bi bi-newspaper me-2"></i>Tin tức</span>
-                        <i class="bi bi-chevron-down ms-auto small chev" aria-hidden="true"></i>
+                        <i class="bi bi-chevron-down ms-auto small chev"></i>
                     </a>
                     <ul class="s-subnav">
                         <li><a class="s-subitem" href="${pageContext.request.contextPath}/admin/news">
@@ -164,6 +159,14 @@
             </ol>
         </nav>
 
+        <!-- Error Message -->
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>${error}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+
         <!-- Dashboard Content -->
         <section id="dash" class="panel show">
             <!-- Stats Cards -->
@@ -172,8 +175,11 @@
                     <div class="card stat">
                         <div class="card-body">
                             <div class="text-secondary">Doanh thu</div>
-                            <div class="display-6 fw-bold" id="statRevenue">0 đ</div>
-                            <small class="text-secondary">Tháng này</small>
+                            <div class="display-6 fw-bold" id="statRevenue">${monthlyRevenue}</div>
+                            <small class="text-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Đơn đã hoàn thành
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -181,7 +187,7 @@
                     <div class="card stat">
                         <div class="card-body">
                             <div class="text-secondary">Khách hàng</div>
-                            <div class="display-6 fw-bold" id="statCustomers">0</div>
+                            <div class="display-6 fw-bold" id="statCustomers">${totalCustomers}</div>
                         </div>
                     </div>
                 </div>
@@ -189,7 +195,11 @@
                     <div class="card stat">
                         <div class="card-body">
                             <div class="text-secondary">Đơn hàng</div>
-                            <div class="display-6 fw-bold" id="statOrders">0</div>
+                            <div class="display-6 fw-bold" id="statOrders">${totalOrders}</div>
+                            <small class="text-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Đã hoàn thành
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -197,7 +207,7 @@
                     <div class="card stat">
                         <div class="card-body">
                             <div class="text-secondary">Sản phẩm</div>
-                            <div class="display-6 fw-bold" id="statProducts">0</div>
+                            <div class="display-6 fw-bold" id="statProducts">${totalProducts}</div>
                         </div>
                     </div>
                 </div>
@@ -207,7 +217,10 @@
             <div class="row g-3 mt-1">
                 <div class="col-12 col-lg-6">
                     <div class="card h-100">
-                        <div class="card-header fw-semibold">Doanh thu</div>
+                        <div class="card-header fw-semibold">
+                            Doanh thu (triệu đồng)
+                            <span class="badge bg-success ms-2">Đơn hoàn thành</span>
+                        </div>
                         <div class="card-body">
                             <canvas id="chartSale" height="140"></canvas>
                         </div>
@@ -253,94 +266,22 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Dashboard JS (chỉ giữ phần cần thiết) -->
+<!-- Dashboard Data -->
 <script>
-// ===== Helpers =====
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-
-// ===== Sidebar toggle (mobile) =====
-$("#btnToggleSidebar")?.addEventListener("click", () => $("#sidebar")?.classList.add("show"));
-document.addEventListener("click", (e) => {
-    const sb = $("#sidebar");
-    if (!sb) return;
-    if (e.target?.id === "btnToggleSidebar") return;
-    if (window.innerWidth < 992 && !sb.contains(e.target)) sb.classList.remove("show");
-});
-
-// ===== Dashboard stats (demo data) =====
-function refreshStats() {
-    // TODO: Sẽ lấy từ backend sau
-    $("#statProducts") && ($("#statProducts").textContent = "0");
-    $("#statOrders") && ($("#statOrders").textContent = "0");
-    $("#statCustomers") && ($("#statCustomers").textContent = "0");
-    $("#statRevenue") && ($("#statRevenue").textContent = "0 đ");
-}
-
-// ===== Charts =====
-let saleChart, trafficChart;
-
-function renderCharts() {
-    const ctx1 = $("#chartSale");
-    const ctx2 = $("#chartTraffic");
-    if (!ctx1 || !ctx2 || typeof Chart === "undefined") return;
-
-    saleChart && saleChart.destroy();
-    trafficChart && trafficChart.destroy();
-
-    saleChart = new Chart(ctx1, {
-        type: "line",
-        data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-            datasets: [{
-                label: "Doanh thu",
-                data: [30, 50, 40, 35, 28, 45],
-                tension: .4,
-                borderColor: "#5b57ea",
-                backgroundColor: "rgba(91,87,234,.15)",
-                fill: true
-            }]
-        },
-        options: {
-            plugins: {legend: {display: false}},
-            scales: {y: {grid: {color: "rgba(0,0,0,.05)"}}}
-        }
-    });
-
-    trafficChart = new Chart(ctx2, {
-        type: "bar",
-        data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            datasets: [{
-                label: "Lượt truy cập",
-                data: [72, 78, 80, 29, 26, 10, 48, 81, 55, 21, 14, 96],
-                backgroundColor: "#5b57ea"
-            }]
-        },
-        options: {
-            plugins: {legend: {display: false}},
-            scales: {y: {grid: {color: "rgba(0,0,0,.05)"}}}
-        }
-    });
-}
-
-// ===== Global search =====
-$("#globalSearch")?.addEventListener("input", (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    const panel = document.querySelector(".panel.show");
-    if (!panel) return;
-    panel.querySelectorAll("tbody tr").forEach(tr => {
-        tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-    });
-});
-
-// ===== Init =====
-document.addEventListener('DOMContentLoaded', function() {
-    refreshStats();
-    renderCharts();
-    console.log('✅ Admin Dashboard loaded!');
-});
+    // Pass data from JSP to JavaScript
+    window.dashboardData = {
+        revenueLabels: ${revenueLabels},
+        revenueValues: ${revenueValues},
+        trafficData: ${trafficData},
+        totalProducts: ${totalProducts},
+        totalOrders: ${totalOrders},
+        totalCustomers: ${totalCustomers},
+        monthlyRevenue: '${monthlyRevenue}'
+    };
 </script>
+
+<!-- Dashboard JavaScript -->
+<script src="${pageContext.request.contextPath}/admin/dashboard.js"></script>
 
 </body>
 </html>

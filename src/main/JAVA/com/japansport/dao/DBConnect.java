@@ -12,7 +12,7 @@ public class DBConnect {
     private DBConnect() {
     }
 
-    static DBConnect getInstance() {
+    public static DBConnect getInstance() {
         if (instance == null) {
             instance = new DBConnect();
         }

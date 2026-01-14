@@ -129,8 +129,8 @@
                     </div>
 
                     <div class="col-md-12">
-                        <label for="categoryImage" class="form-label">Ảnh (URL)</label>
-                        <input type="url" class="form-control" id="categoryImage" name="image_url"
+                        <label for="categoryImage" class="form-label">Ảnh</label>
+                        <input type="text" class="form-control" id="categoryImage" name="image_url"
                                placeholder="https://example.com/image.jpg">
                     </div>
 
